@@ -1,0 +1,19 @@
+[string]{origin:time_t\n(calendar time);offset:-2,-6}
+[format string]{origin:time_t\n(calendar time);offset:2,-6}
+[struct tm\n(structed time)]{origin:time_t\n(calendar time);offset:0,-4}
+[timeval]{origin:time_t\n(calendar time);offset:-4,0}
+[time_t\n(calendar time)]
+[timespec]{origin:time_t\n(calendar time);offset:4,0}
+[system core]{origin:time_t\n(calendar time);offset:0,2}
+
+[timeval]                       ..  tv_sec       ..> [time_t\n(calendar time)] 
+[timespec]                      ..  tv_sec       ..> [time_t\n(calendar time)] 
+[string]                        --  strptime     -->{start:south;end:west;} [struct tm\n(structed time)] 
+[struct tm\n(structed time)]    --  strftime      -->{start:east;end:south;}   [format string]
+[struct tm\n(structed time)]    --  strftime_l    -->{start:east;end:south;}   [format string]
+[time_t\n(calendar time)]       --  gmtime       --> {start:north;end:south;} [struct tm\n(structed time)] 
+[time_t\n(calendar time)]       --  localtime    --> {start:north;end:south;} [struct tm\n(structed time)] 
+[struct tm\n(structed time)]    --  mktime       --> {start:south;end:north;} [time_t\n(calendar time)]
+[system core]                   -- time          --> [time_t\n(calendar time)]
+[system core]                   -- gettimeofday  --> [timeval]
+[system core]                   -- clock_gettime --> [timespec]
