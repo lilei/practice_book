@@ -1,4 +1,8 @@
+cmake_minimum_required(VERSION 2.8)
 AUX_SOURCE_DIRECTORY(./src src_list)
 add_executable(practice ${src_list})
 TARGET_LINK_LIBRARIES(practice gtest pthread)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+if(UNIX)
+add_definitions(-g)
+endif()
