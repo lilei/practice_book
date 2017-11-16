@@ -14,7 +14,7 @@ TEST(signed, unsighed_minus)
     std::cout << (double)a - (double)b << std::endl;
 
     std::cout << abs((double)a - (double)b) << std::endl;
-    std::cout << abs(a - b) << std::endl;
+    //std::cout << abs(a - b) << std::endl;
 }
 
 TEST(signed, mod)

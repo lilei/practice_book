@@ -1,6 +1,9 @@
+#ifdef _LINUX
+
 #include <gtest/gtest.h>
 #include <iostream>
 #include <time.h>
+
 #include <sys/time.h>
 
 //unix内核提供的时间都是从协调世界时(UTC)1970年1月1日开始，到现在的秒数.
@@ -104,3 +107,4 @@ TEST(time, clock)
     std::cout << c1 << " " << c2 << " " << c3 << " " << std::endl;
     std::cout << c1 / CLOCKS_PER_SEC << " " << c2 / CLOCKS_PER_SEC << " " << c3 / CLOCKS_PER_SEC << " " << std::endl;
 }
+#endif // LINUX

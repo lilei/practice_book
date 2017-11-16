@@ -5,5 +5,10 @@ int main(int argc, char *argv[])
     testing::GTEST_FLAG(filter) = "align.*";
     //testing::GTEST_FLAG(repeat) = 1000;
     testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+
+    RUN_ALL_TESTS();
+
+#if (defined _WIN32 || defined _WIN64)
+    getchar();
+#endif
 }
