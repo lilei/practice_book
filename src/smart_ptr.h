@@ -10,11 +10,11 @@ Warning: it's non-thread-safe!(nor the std::shared_ptr)
 #include <cstddef>
 
 template <class Y>
-class shared_ptr
+class smart_ptr
 {
 public:
-    shared_ptr() :ptr_(NULL) {}
-    explicit shared_ptr(Y* ptr) 
+    smart_ptr() :ptr_(NULL) {}
+    explicit smart_ptr(Y* ptr) 
     { 
         ptr_ = ptr;
         if (NULL != ptr)
@@ -23,7 +23,7 @@ public:
         }
     }
 
-    shared_ptr(const shared_ptr& right) 
+    smart_ptr(const smart_ptr& right) 
     { 
         ptr_ = right.get();
         if (NULL != ptr_)
@@ -32,14 +32,23 @@ public:
         }
     }
 
-    shared_ptr& operator=(const shared_ptr& right)
+    smart_ptr& operator=(const smart_ptr& right)
     {
+        ptr_->dec_ref();
         ptr_ = right.get();
         ptr_->inc_ref();
         return (*this);
     }
 
-    virtual ~shared_ptr() 
+    smart_ptr& operator=(Y* ptr)
+    {
+        ptr_->dec_ref();
+        ptr_ = ptr;
+        ptr->inc_ref();
+        return (*this);
+    }
+
+    virtual ~smart_ptr() 
     {
         if (NULL != ptr_)
         {
@@ -67,14 +76,7 @@ public:
         return ptr_;
     }
 
-    shared_ptr& operator=(Y* ptr)
-    {
-        ptr_ = ptr;
-        ptr->inc_ref();
-        return (*this);
-    }
-
-    bool operator==(const shared_ptr& right)const
+    bool operator==(const smart_ptr& right)const
     {
         return (this->ptr_ == right.get());
     }
@@ -84,7 +86,7 @@ public:
         return (this->ptr_ == right);
     }
 
-    bool operator!=(const shared_ptr& right)const
+    bool operator!=(const smart_ptr& right)const
     {
         return (this->ptr_ != right.get());
     }
@@ -103,11 +105,18 @@ public:
     
     void inc_ref()
     {
-        ++ref_count_;
+        if (NULL != this)
+        {
+            ++ref_count_;
+        }
     }
 
     void dec_ref()
     {
+        if (NULL == this || 0 == ref_count_)
+        {
+            return;
+        }
         --ref_count_;
         if (0 == ref_count_)
         {
@@ -117,7 +126,14 @@ public:
 
     size_t ref_count() const
     {
-        return ref_count_;
+        if (NULL == this)
+        {
+            return 0;
+        }
+        else
+        {
+            return ref_count_;
+        }
     }
 
 private:
