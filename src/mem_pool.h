@@ -3,11 +3,14 @@
 
 /*
 An object memory pool.
-Every node of the pool contains either the payload or the pointer of the next node.
-When every node's lengh is less than a pointer's,It's cost nothing extra but the memory itself.
+When a node of the pool is unused,we reuse it to store the next node's point.
+The extra memory cost is only sizeof(void*).
 */
 
-const size_t DEFALUT_SIZE = 2048;
+
+#include <cstddef>
+
+const size_t DEFALUT_SIZE = 1;
 
 template <class T>
 class mem_pool
@@ -20,11 +23,26 @@ public:
 
     void free(void* recycle);
 
+    //only for debug
+    size_t free_size();
 private:
     void reserve(size_t size = DEFALUT_SIZE);
 
     mem_pool<T>* next_; /*be sure of this class has this only member*/
 };
+
+template <class T>
+size_t mem_pool<T>::free_size()
+{
+    size_t i = 0;
+    mem_pool<T>* ptr = next_;
+    while (NULL != ptr)
+    {
+        ++i;
+        ptr = ptr->next_;
+    }
+    return i;
+}
 
 template <class T>
 mem_pool<T>::mem_pool()
@@ -39,41 +57,40 @@ mem_pool<T>::~mem_pool()
     while (NULL != next_)
     {
         mem_pool<T>* ptr = next_;
-        next_ = next_->next_;
-        delete[] ptr;
+        next_ = ptr->next_;
+        delete[] reinterpret_cast<char*>(ptr);
     }
 }
+
 template <class T>
 void* mem_pool<T>::alloc()
 {
-    if (NULL == next)
+    if (NULL == next_)
     {
         reserve();
     }
     mem_pool<T>* got = next_;
     next_ = got->next_;
-    return got;
+    return static_cast<void*>(got);
 }
 
 template <class T>
 void mem_pool<T>::free(void* recycle)
 {
-    mem_pool<T>* new_head = static_cast<mem_pool<T>*>(recycle);
+    mem_pool<T>* new_head = reinterpret_cast<mem_pool<T>*>(recycle);
 
-    new_head->next = next_;
+    new_head->next_ = next_;
     next_ = new_head;
 }
 
 template <class T>
-void mem_pool<T>::reserve(size_t size /*= DEFALUT_SIZE*/)
+void mem_pool<T>::reserve(size_t size)
 {
     size_t len = (sizeof(T) > sizeof(void*)) ? sizeof(T) : sizeof(void*);
-    mem_pool<T>* ptr = static_cast<mem_pool<T>*>(new char[len]);
-    next_ = ptr;
-
+    mem_pool<T>* ptr = this;
     for (size_t i = 0;i < size;i++)
     {
-        ptr->next_ = static_cast<mem_pool<T>*>(new char[len]);
+        ptr->next_ = reinterpret_cast<mem_pool<T>*>(new char[len]);
         ptr = ptr->next_;
     }
     ptr->next_ = NULL;

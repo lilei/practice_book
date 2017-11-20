@@ -2,7 +2,7 @@
 If you need smartptr, but you do not have a c++11 complier
 and hate importing the huge boost library,
 you can take this tiny implement of shared_ptr.
-Warning: it's non-thread-safe!(nor the std::shared_ptr)
+Warning: it's non-thread-safe!(neither the std::shared_ptr)
 */
 
 #ifndef SHARED_PTR_H
@@ -95,11 +95,15 @@ private:
     Y* ptr_;
 };
 
+typedef void (*deleter)(void* ptr);
 class shared_object
 {
 public:
     shared_object()
-        :ref_count_(0) {}
+        :ref_count_(0)
+    {
+    }
+
 
     virtual ~shared_object() {}
     
@@ -120,7 +124,7 @@ public:
         --ref_count_;
         if (0 == ref_count_)
         {
-            delete this;
+            destroy();
         }
     }
 
@@ -136,10 +140,17 @@ public:
         }
     }
 
+protected:
+    virtual void destroy()
+    {
+        delete this;
+    }
+
 private:
     shared_object(const shared_object&);
     const shared_object& operator=(const shared_object&);
     size_t ref_count_;
+    deleter deleter_;
 };
 
 #endif /* SHARED_PTR_H */
