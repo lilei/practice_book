@@ -10,7 +10,7 @@ The extra memory cost is only sizeof(void*).
 
 #include <cstddef>
 
-const size_t DEFALUT_SIZE = 1;
+const size_t DEFALUT_SIZE = 2048;
 
 template <class T>
 class mem_pool
@@ -95,5 +95,4 @@ void mem_pool<T>::reserve(size_t size)
     }
     ptr->next_ = NULL;
 }
-
 #endif /* MEM_POOL_H */

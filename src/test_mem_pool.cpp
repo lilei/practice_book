@@ -60,45 +60,35 @@ TEST(mem_pool, free)
 }
 
 // coopration with smart_prt
-mem_pool<class B> pool_b;
+
 class B :public shared_object
 {
-    void destroy()
-    {
-        pool_b.free(this);
-    }
+};
+
+mem_pool<class B> pool;
+void del_func(void* ptr)
+{
+    pool.free(ptr);
 };
 TEST(mem_pool,smartptr_alloc)
 {
-    void* ptr = pool_b.alloc();
-    smart_ptr<B> b = smart_ptr<B>(new (ptr)B);
+    void* ptr = pool.alloc();
+    smart_ptr<B> b = smart_ptr<B>((new (ptr)B),del_func);
     EXPECT_EQ(b.get(),ptr);
 }
 
 
-mem_pool<class C> pool_c;
-class C :public shared_object
+TEST(mem_pool,smartptr_alloc1)
 {
-    void destroy()
-    {
-        pool_c.free(this);
-    }
-};
-TEST(mem_pool,smartptr_free)
-{
-    EXPECT_EQ(DEFALUT_SIZE, pool_c.free_size());
-    
-    auto c1 = smart_ptr<C>(new (pool_c.alloc())C);
-    EXPECT_EQ(DEFALUT_SIZE-1, pool_c.free_size());
-    auto ptr1 = c1.get();
-    
-    c1 = NULL;
-    EXPECT_EQ(DEFALUT_SIZE, pool_c.free_size());
+    void* ptr1 = pool.alloc();
+    auto b = smart_ptr<B>((new (ptr1)B),del_func);
+    EXPECT_EQ(b.get(),ptr1);
 
+    b = NULL;
 
-    auto c2 = smart_ptr<C>(new (pool_c.alloc())C);
-    EXPECT_EQ(DEFALUT_SIZE-1, pool_c.free_size());
-    auto ptr2 = c2.get();
-
+    void* ptr2 = pool.alloc();
     EXPECT_EQ(ptr1,ptr2);
+
+    auto c = smart_ptr<B>((new (ptr2)B),del_func);
+    EXPECT_EQ(c.get(),ptr2);
 }
