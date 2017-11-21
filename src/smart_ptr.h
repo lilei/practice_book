@@ -39,6 +39,7 @@ public:
     { 
         ptr_ = right.get();
         inc_ref();
+        deleter_ = right.deleter_;
     }
 
     smart_ptr& operator=(const smart_ptr& right)
@@ -46,6 +47,7 @@ public:
         dec_ref();
         ptr_ = right.get();
         inc_ref();
+        deleter_ = right.deleter_;
         return (*this);
     }
 

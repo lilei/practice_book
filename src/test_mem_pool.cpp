@@ -78,7 +78,7 @@ TEST(mem_pool,smartptr_alloc)
 }
 
 
-TEST(mem_pool,smartptr_alloc1)
+TEST(mem_pool,smartptr_free)
 {
     void* ptr1 = pool.alloc();
     auto b = smart_ptr<B>((new (ptr1)B),del_func);
@@ -91,4 +91,21 @@ TEST(mem_pool,smartptr_alloc1)
 
     auto c = smart_ptr<B>((new (ptr2)B),del_func);
     EXPECT_EQ(c.get(),ptr2);
+}
+
+TEST(mem_pool,smartptr_copy_construct)
+{
+    void* ptr1 = pool.alloc();
+    auto a = smart_ptr<B>((new (ptr1)B),del_func);
+    
+    auto b = a;
+}
+
+TEST(mem_pool,smartptr_copy_assign)
+{
+    void* ptr1 = pool.alloc();
+    auto a = smart_ptr<B>((new (ptr1)B),del_func);
+    smart_ptr<B> b;
+    
+    b = a;
 }
