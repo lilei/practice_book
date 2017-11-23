@@ -69,5 +69,5 @@ TEST(lambda, sort1)
 
     std::sort(v.begin(), v.end(), comp);
 
-    std::sort(v.begin(), v.end(), [&](A a, A b) {return a.a > b.a; });
+    std::sort(v.begin(), v.end(), [](A a, A b) {return a.a > b.a; });
 }
