@@ -65,7 +65,16 @@ TEST(html_printer, node_linked)
 TEST(html_printer, node_operator)
 {
     Node html("html");
-    html>"body">"div">"span">"img";
+    html>>"body">>"div">>"span">>"img";
+    Printer printer(&std::cout);
+    printer << html;
+    std::cout << std::endl;
+}
+
+TEST(html_printer, node_operator_add)
+{
+    Node html("html");
+    html>>Node("body")>>Node("div")>Node("span")>Node("img");
     Printer printer(&std::cout);
     printer << html;
     std::cout << std::endl;

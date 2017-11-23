@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <ostream>
+#include <assert.h>
 
 namespace html
 { 
@@ -24,7 +25,7 @@ public:
     {}
 
     Node(const char* name,double value) 
-        :name_(name),value_(std::to_string(value))
+        :parent_(NULL),name_(name),value_(std::to_string(value))
     {}
 
     ~Node()
@@ -63,16 +64,26 @@ public:
     Node& append_child(const Node& child)
     {
         children_.push_back(child);
-        return children_.back();
+        Node& node = children_.back();
+        node.parent_ = this;
+        return node;
     }
 
-    Node& operator>(const Node& child)
+    Node& operator>>(const Node& child)
     {
         return append_child(child);
     }
 
+    Node& operator>(const Node& child)
+    {
+        assert(NULL != parent_);
+        return parent_->append_child(child);
+    }
+
     friend Printer;
 protected:
+    Node* parent_;
+
     std::string name_;
     std::string value_;
     std::map<std::string, std::string> attri_;
