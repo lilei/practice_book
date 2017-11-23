@@ -71,12 +71,18 @@ TEST(html_printer, node_operator)
     std::cout << std::endl;
 }
 
-TEST(html_printer, node_operator_add)
+TEST(html_printer, node_operator1)
 {
-    Node html("html");
-    html>>Node("body")>>Node("div")>Node("span")>Node("img");
+    auto doc = Node("html");
+    auto head = Node("head");
+    auto title = Node("title");
+    auto body = Node("body");
+    auto div = Node("div");
+    auto span = Node("span");
+    auto img = Node("img");
+    doc >> (head >> title) >> (body >> (div >> (span >> img)));
     Printer printer(&std::cout);
-    printer << html;
+    printer << doc;
     std::cout << std::endl;
 }
 
@@ -85,6 +91,24 @@ TEST(html_printer, document)
     document  doc;
     Printer printer(&std::cout);
     printer << doc;
+    std::cout << std::endl;
+}
+
+TEST(html_printer, table)
+{
+    Table  table;
+    for (int i = 0;i < 5;i++)
+    {
+        Tr tr;
+        for (int j = 0;j < 3;j++)
+        {
+            Td td(std::to_string(i * 3 + j).c_str());
+            tr >> td;
+        }
+        table >> tr;
+    }
+    Printer printer(&std::cout);
+    printer << table;
     std::cout << std::endl;
 }
 

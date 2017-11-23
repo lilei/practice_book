@@ -10,22 +10,23 @@
 namespace html
 { 
 class Printer;
+class V_Node;
 class Node
 {
 public:
     Node(const char* name) 
-        :name_(name)
+        :name_(name),parent_(nullptr)
     {}
     Node(const char* name,const char* value) 
         :name_(name),value_(value)
     {}
 
     Node(const char* name,int value) 
-        :name_(name),value_(std::to_string(value))
+        :name_(name),value_(std::to_string(value)),parent_(nullptr)
     {}
 
     Node(const char* name,double value) 
-        :parent_(NULL),name_(name),value_(std::to_string(value))
+        :name_(name),value_(std::to_string(value)),parent_(nullptr)
     {}
 
     ~Node()
@@ -71,13 +72,8 @@ public:
 
     Node& operator>>(const Node& child)
     {
-        return append_child(child);
-    }
-
-    Node& operator>(const Node& child)
-    {
-        assert(NULL != parent_);
-        return parent_->append_child(child);
+        append_child(child);
+        return *this;
     }
 
     friend Printer;
@@ -196,6 +192,25 @@ public:
     { 
         attri_[src] = src;
     }
+};
+
+class Td :public Node
+{
+public:
+    Td(const char* text) 
+        :Node("td",text) {}
+};
+
+class Tr :public Node
+{
+public:
+    Tr() :Node("tr") {}
+};
+
+class Table :public Node
+{
+public:
+    Table() :Node("table") {}
 };
 
 } // end namespace
