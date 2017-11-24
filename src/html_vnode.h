@@ -26,5 +26,7 @@ VNode& operator+(const Node& node,VNode& vnode);
 
 Node& operator>(Node& node,const VNode& vnode);
 
+VNode& operator*(VNode& vnode,size_t n);
+
 } // end namespace
 #endif /* HTML_VNODE_H */

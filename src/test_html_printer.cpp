@@ -110,6 +110,13 @@ TEST(html,normal_html)
     print(doc);
 }
 
+TEST(html,vnode_mul)
+{
+    auto doc = Html();
+    doc > (Div() + Span()) * 5;
+    print(doc);
+}
+
 TEST(html,print)
 {
     Node div("div","text");

@@ -1,4 +1,5 @@
 #include "html_vnode.h"
+#include <algorithm>
 
 namespace html
 {
@@ -56,6 +57,17 @@ html::Node& operator>(Node& node, const VNode& vnode)
         node > sbling;
     }
     return node;
+}
+
+VNode& operator*(VNode& vnode, size_t n)
+{
+    std::vector<Node> nodes = vnode.sbling_node_;
+    std::vector<Node> &sblings = vnode.sbling_node_;
+    for (size_t i = 0; i < n - 1; i++)
+    {
+        std::copy(nodes.begin(), nodes.end(), std::back_inserter(sblings));
+    }
+    return vnode;
 }
 
 } // end namespace
