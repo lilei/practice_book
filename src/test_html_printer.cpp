@@ -3,7 +3,6 @@
 #include "html_printer.h"
 #include "html_element.h"
 #include "html_node.h"
-#include "html_vnode.h"
 
 using namespace html;
 
