@@ -1,10 +1,19 @@
-#include "html_printer.h"
 #include <iostream>
 #include <gtest/gtest.h>
+#include "html_printer.h"
+#include "html_element.h"
+#include "html_node.h"
 
 using namespace html;
 
-TEST(html_printer,node_construct)
+void print(const Node& node)
+{
+    Printer printer(&std::cout);
+    printer << node;
+    std::cout<<std::endl;
+}
+
+TEST(html,node_construct)
 {
     Node html("html");
     Node div("div","text");
@@ -12,7 +21,7 @@ TEST(html_printer,node_construct)
     Node span1("span",1.1);
 }
 
-TEST(html_printer,node_value)
+TEST(html,node_value)
 {
     Node div("div","text");
     div.value("");
@@ -20,7 +29,7 @@ TEST(html_printer,node_value)
     div.value(1.1);
 }
 
-TEST(html_printer, node_attri)
+TEST(html, node_attri)
 {
     Node div("div","text");
     div.attri("id",1);
@@ -29,7 +38,7 @@ TEST(html_printer, node_attri)
     div.attri("height","100%");
 }
 
-TEST(html_printer, node_children)
+TEST(html, node_children)
 {
     Node html("html");
     Node div("div");
@@ -38,40 +47,32 @@ TEST(html_printer, node_children)
     div.append_child(img);
     div.append_child(img);
     html.append_child(div);
-    Printer printer(&std::cout);
-    printer << html;
-    std::cout << std::endl;
+    print(html);
 }
 
-TEST(html_printer, node_children1)
+TEST(html, node_children1)
 {
     Node html("html");
     html.append_child("head");
     html.append_child("body");
-    Printer printer(&std::cout);
-    printer << html;
-    std::cout << std::endl;
+    print(html);
 }
 
-TEST(html_printer, node_linked)
+TEST(html, node_linked)
 {
     Node html("html");
     html.append_child("body").append_child("div").append_child("span").append_child("img");
-    Printer printer(&std::cout);
-    printer << html;
-    std::cout << std::endl;
+    print(html);
 }
 
-TEST(html_printer, node_operator)
+TEST(html, node_operator)
 {
     Node html("html");
-    html>>"body">>"div">>"span">>"img";
-    Printer printer(&std::cout);
-    printer << html;
-    std::cout << std::endl;
+    html>"body">"div">"span">"img";
+    print(html);
 }
 
-TEST(html_printer, node_operator1)
+TEST(html, node_operator1)
 {
     auto doc = Node("html");
     auto head = Node("head");
@@ -80,21 +81,17 @@ TEST(html_printer, node_operator1)
     auto div = Node("div");
     auto span = Node("span");
     auto img = Node("img");
-    doc >> (head >> title) >> (body >> (div >> (span >> img)));
-    Printer printer(&std::cout);
-    printer << doc;
-    std::cout << std::endl;
+    doc > (head > title) > (body > (div > (span > img)));
+    print(doc);
 }
 
-TEST(html_printer, document)
+TEST(html, document)
 {
     document  doc;
-    Printer printer(&std::cout);
-    printer << doc;
-    std::cout << std::endl;
+    print(doc);
 }
 
-TEST(html_printer, table)
+TEST(html, table)
 {
     Table  table;
     for (int i = 0;i < 5;i++)
@@ -103,23 +100,50 @@ TEST(html_printer, table)
         for (int j = 0;j < 3;j++)
         {
             Td td(std::to_string(i * 3 + j).c_str());
-            tr >> td;
+            tr > td;
         }
-        table >> tr;
+        table > tr;
     }
-    Printer printer(&std::cout);
-    printer << table;
-    std::cout << std::endl;
+    print(table);
 }
 
-TEST(html_printer,node_print)
+TEST(html,link)
+{
+    Node doc("html");
+    doc > Node("body") > Node("div") > Node("span") > Node("img");
+    print(doc);
+}
+
+TEST(html,vnode)
+{
+    Node doc("html");
+    doc > (Node("head") > Node("title")) + 
+          (Node("body") > 
+                         Node("div") +
+                         Node("div"));
+    print(doc);
+}
+
+TEST(html,attri_and_value)
+{
+    Node doc("html");
+    doc > Node("div").attri("width",1).value("abcdef").attri("height","100%");
+    print(doc);
+}
+
+TEST(html,multi)
+{
+    Node doc("html");
+    doc > Node("div").attri("width",1).value("abcdef").attri("height","100%")*5;
+    print(doc);
+}
+
+TEST(html,node_print)
 {
     Node div("div","text");
     div.attri("id",1);
     div.attri("back_ground","red");
     div.attri("width",3.4);
-    Printer printer(&std::cout);
-    printer << div;
-    std::cout << std::endl;
+    print(div);
 }
 

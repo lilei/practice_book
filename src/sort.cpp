@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <functional>
 
-TEST(lambda,sort)
+TEST(sort,sort)
 {
     std::vector<int> v = {3,4,5,1};
 
@@ -44,7 +44,7 @@ TEST(lambda,sort)
 }
 
 
-TEST(lambda, sort1)
+TEST(sort, sort1)
 {
     struct A
     {
