@@ -1,6 +1,6 @@
 #include <iostream>
 #include <gtest/gtest.h>
-#include "html_node.h"
+#include "html_gen.h"
 
 using namespace html;
 
