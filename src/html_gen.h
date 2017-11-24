@@ -1,5 +1,5 @@
-#ifndef HTML_NODE_H
-#define HTML_NODE_H
+#ifndef HTML_GEN_H
+#define HTML_GEN_H
 
 #include <map>
 #include <vector>
@@ -253,4 +253,4 @@ class Hr    :public Node { public: Hr()    :Node("hr")    {} };
 
 } // end namespace
 
-#endif /* HTML_NODE_H */
+#endif /* HTML_GEN_H */
