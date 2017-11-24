@@ -11,10 +11,20 @@ class VNode
 public:
     VNode(const Node& node);
 
-    VNode& operator+(const Node& node);
-
     std::vector<Node> sbling_node_;
 };
+
+Node& operator>(Node& lhs,const Node& rhs);
+
+VNode operator+(const Node& lhs, const Node& rhs);
+
+VNode operator*(const Node& node,size_t n);
+
+VNode& operator+(VNode& vnode,const Node& node);
+
+VNode& operator+(const Node& node,VNode& vnode);
+
+Node& operator>(Node& node,const VNode& vnode);
 
 } // end namespace
 #endif /* HTML_VNODE_H */

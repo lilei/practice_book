@@ -10,7 +10,6 @@ namespace html
 { 
 
 class Printer;
-class VNode;
 class Node
 {
 public:
@@ -38,16 +37,8 @@ public:
 
     Node& append_child(const Node& child);
 
-    Node& operator>(const Node& child);
-
-    Node& operator>(std::shared_ptr<VNode> vnode);
-
-    std::shared_ptr<VNode> operator+(const Node& sibling);
-
-    std::shared_ptr<VNode> operator*(size_t n);
-
     friend Printer;
-protected:
+
     Node* parent_;
 
     std::string name_;

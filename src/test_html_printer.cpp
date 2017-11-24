@@ -3,6 +3,7 @@
 #include "html_printer.h"
 #include "html_element.h"
 #include "html_node.h"
+#include "html_vnode.h"
 
 using namespace html;
 
@@ -13,7 +14,7 @@ void print(const Node& node)
     std::cout<<std::endl;
 }
 
-TEST(html,node_construct)
+TEST(html,construct)
 {
     Node html("html");
     Node div("div","text");
@@ -21,7 +22,7 @@ TEST(html,node_construct)
     Node span1("span",1.1);
 }
 
-TEST(html,node_value)
+TEST(html,value)
 {
     Node div("div","text");
     div.value("");
@@ -29,7 +30,7 @@ TEST(html,node_value)
     div.value(1.1);
 }
 
-TEST(html, node_attri)
+TEST(html, attri)
 {
     Node div("div","text");
     div.attri("id",1);
@@ -38,7 +39,7 @@ TEST(html, node_attri)
     div.attri("height","100%");
 }
 
-TEST(html, node_children)
+TEST(html, children)
 {
     Node html("html");
     Node div("div");
@@ -50,78 +51,12 @@ TEST(html, node_children)
     print(html);
 }
 
-TEST(html, node_children1)
+TEST(html, children1)
 {
     Node html("html");
     html.append_child("head");
     html.append_child("body");
     print(html);
-}
-
-TEST(html, node_linked)
-{
-    Node html("html");
-    html.append_child("body").append_child("div").append_child("span").append_child("img");
-    print(html);
-}
-
-TEST(html, node_operator)
-{
-    Node html("html");
-    html>"body">"div">"span">"img";
-    print(html);
-}
-
-TEST(html, node_operator1)
-{
-    auto doc = Node("html");
-    auto head = Node("head");
-    auto title = Node("title");
-    auto body = Node("body");
-    auto div = Node("div");
-    auto span = Node("span");
-    auto img = Node("img");
-    doc > (head > title) > (body > (div > (span > img)));
-    print(doc);
-}
-
-TEST(html, document)
-{
-    document  doc;
-    print(doc);
-}
-
-TEST(html, table)
-{
-    Table  table;
-    for (int i = 0;i < 5;i++)
-    {
-        Tr tr;
-        for (int j = 0;j < 3;j++)
-        {
-            Td td(std::to_string(i * 3 + j).c_str());
-            tr > td;
-        }
-        table > tr;
-    }
-    print(table);
-}
-
-TEST(html,link)
-{
-    Node doc("html");
-    doc > Node("body") > Node("div") > Node("span") > Node("img");
-    print(doc);
-}
-
-TEST(html,vnode)
-{
-    Node doc("html");
-    doc > (Node("head") > Node("title")) + 
-          (Node("body") > 
-                         Node("div") +
-                         Node("div"));
-    print(doc);
 }
 
 TEST(html,attri_and_value)
@@ -131,14 +66,51 @@ TEST(html,attri_and_value)
     print(doc);
 }
 
-TEST(html,multi)
+TEST(html,element)
+{
+    Html doc;
+    doc > (Head() > Title()) + (Body() > (Span() + Div()*5));
+    print(doc);
+}
+
+TEST(html,node_linked)
+{
+    Node doc("html");
+    doc > Body() > Div() > Span() > Img();
+    print(doc);
+    //print(Html() > Body() > Div() > Span() > Img()); /* wrong linded operat returned the last node*/
+}
+
+TEST(html,node_plus_node)
+{
+    print(Html() > Div() + Div());
+}
+
+TEST(html,node_mul)
 {
     Node doc("html");
     doc > Node("div").attri("width",1).value("abcdef").attri("height","100%")*5;
     print(doc);
 }
 
-TEST(html,node_print)
+TEST(html,node_plus_vnode1)
+{
+    print(Html() > Div() + Span() + Img());
+}
+
+TEST(html,node_plus_vnode2)
+{
+    print(Html() > Div() + (Span() + Img()));
+}
+
+TEST(html,normal_html)
+{
+    auto doc = Html();
+    doc > (Head() > Title()) + (Body() > Div() > (Span() + Img()));
+    print(doc);
+}
+
+TEST(html,print)
 {
     Node div("div","text");
     div.attri("id",1);
