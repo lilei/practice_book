@@ -174,9 +174,9 @@ public:
         }
         value(node.value_);
 
-        for (const auto& node:node.children_)
+        for (auto child:node.children_)
         {
-            *this << node;
+            *this << child;
         }
 
         end_tag(node.name_);
