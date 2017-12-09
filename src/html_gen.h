@@ -106,7 +106,6 @@ Node& operator>(Node& lhs, const Node& rhs)
     return lhs.children_.back();
 }
 
-
 VNode& operator+(VNode& vnode, const Node& node)
 {
     vnode.sbling_node_.push_back(node);
@@ -168,7 +167,7 @@ public:
     Printer& operator<<(const Node& node)
     {
         begin_tag(node.name_);
-        for (const auto& kv:node.attri_)
+        for (const auto& kv : node.attri_)
         {
             attri(kv.first, kv.second);
         }
@@ -239,6 +238,7 @@ private:
     int indent_;
 };
 
+//html elements
 class Html  :public Node { public: Html()  :Node("html")  {} };
 class Head  :public Node { public: Head()  :Node("head")  {} };
 class Body  :public Node { public: Body()  :Node("body")  {} };
@@ -250,6 +250,9 @@ class Tr    :public Node { public: Tr()    :Node("tr")    {} };
 class Td    :public Node { public: Td()    :Node("td")    {} };
 class Span  :public Node { public: Span()  :Node("span")  {} };
 class Hr    :public Node { public: Hr()    :Node("hr")    {} };
+class H1    :public Node { public: H1()    :Node("h1")    {} };
+class H2    :public Node { public: H2()    :Node("h2")    {} };
+class H3    :public Node { public: H3()    :Node("h3")    {} };
 
 } // end namespace
 
