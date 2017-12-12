@@ -1,0 +1,5 @@
+[frame] -> {start:front,0;} [slice1],[slice2],[slice3]
+
+[slice1] ->{start:front,0;} [slice header],[slice data]
+
+[slice data] -> {start:front,0;} [macro block1],[macro block2],[macro block3]
