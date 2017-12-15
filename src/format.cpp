@@ -4,7 +4,7 @@
 class stringparser
 {
 public:
-    stringparser(std::string str)
+    explicit stringparser(std::string str)
         :s_(str) {}
 
     stringparser& read_until(std::string& got,const char until)
@@ -33,7 +33,6 @@ public:
         return *this;
     }
 
-
     stringparser& consume(char c)
     {
         char temp;
@@ -49,8 +48,8 @@ public:
     {
         for (size_t i = 0;i < str.size();i++)
         {
-            char temp = 0;
-            if (!s_ >> temp)
+            char temp;
+            if (!(s_ >> temp))
             {
                 bad();
             }
@@ -88,7 +87,6 @@ private:
 TEST(format,urlpaser)
 {
     std::string url = "rtsp://127.0.0.1:8000/file/sessions/ad34wdwdaw12jbj232jnijiijwad2323gh";
-    stringparser parser(url);
 
     std::string proto;
     std::string ip;
@@ -97,10 +95,10 @@ TEST(format,urlpaser)
 
     try
     {
-        parser.read_until(proto, ':')
-            .consume('/')
-            .consume('/') 
-            .read_until(ip,':')
+        stringparser(url)
+            .read_until(proto, ':')
+            .consume("//")
+            .read_until(ip, ':')
             .read_int(port)
             .consume("/file")
             .consume("/sessions/");
