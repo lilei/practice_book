@@ -86,12 +86,13 @@ private:
 
 TEST(format,urlpaser)
 {
-    std::string url = "rtsp://127.0.0.1:8000/file/sessions/ad34wdwdaw12jbj232jnijiijwad2323gh";
+    std::string url = "rtsp://127.0.0.1:8000/file/sessions:[1]:[2]";
 
     std::string proto;
     std::string ip;
     int port = 0;
-    std::string rest;
+    int channel = 0;
+    int sub_channel = 0;
 
     try
     {
@@ -101,14 +102,21 @@ TEST(format,urlpaser)
             .read_until(ip, ':')
             .read_int(port)
             .consume("/file")
-            .consume("/sessions/");
+            .consume("/sessions")
+            .consume(':')
+            .consume('[') .read_int(channel) .consume(']')
+            .consume(':')
+            .consume('[') .read_int(sub_channel) .consume(']')
+            .end();
     }
     catch (const stringparser::exception&)
     {
+        EXPECT_TRUE(false);
     }
 
-
-    std::cout << "proto: " << proto << std::endl;
-    std::cout << "ip: " << ip << std::endl;
-    std::cout << "port: " << port << std::endl;
+    EXPECT_EQ("rtsp",proto);
+    EXPECT_EQ("127.0.0.1",ip);
+    EXPECT_EQ(8000,port);
+    EXPECT_EQ(1,channel);
+    EXPECT_EQ(2,sub_channel);
 }
