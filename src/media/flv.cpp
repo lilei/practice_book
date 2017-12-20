@@ -2,18 +2,6 @@
 #include <fstream>
 #include <assert.h>
 
-uint32_t reverse_bytes(unsigned char *temp, int size)
-{
-    assert(size <= 4);
-    uint32_t r = 0;
-    for (int i = 0; i < size; i++)
-    {
-        int x = temp[i];
-        x = x << ((size - 1 - i) * 8);
-        r |= x;
-    }
-    return r;
-}
 struct FlvHeader
 {
     char signature[3];
@@ -416,6 +404,19 @@ private:
         uint16_t array_size = reverse_bytes(AMF2_filed2, 4);
         fs_.seekg(len - 18,std::ios_base::cur);
         return true;
+    }
+
+    uint32_t reverse_bytes(unsigned char *temp, int size)
+    {
+        assert(size <= 4);
+        uint32_t r = 0;
+        for (int i = 0; i < size; i++)
+        {
+            int x = temp[i];
+            x = x << ((size - 1 - i) * 8);
+            r |= x;
+        }
+        return r;
     }
 
     std::fstream& fs_;

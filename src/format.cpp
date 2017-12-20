@@ -311,6 +311,7 @@ private:
             {
             }
             value = parser.rest();
+            query_[key] = value;
         }
         return true;
     }
