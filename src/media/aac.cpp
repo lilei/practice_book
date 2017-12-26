@@ -1,10 +1,10 @@
+#include "bitwise.h"
 #include <gtest/gtest.h>
 #include <fstream>
-#include <array>
+
 
 struct AdtsVariableHeader
 {
-
 };
 
 class AAC
@@ -16,172 +16,111 @@ public:
 
     void parse()
     {
-        while (fs_)
-        {
-            adts();
-        }
+        for (;adts();) {}
     }
 
 private:
-    void adts()
+    bool adts()
     {
-        if (!syncword())
-        {
-            return;
-        }
-        while (!syncword())
-        {
-        }
-        return;
-    }
-
-    bool syncword()
-    {
-        std::array<uint8_t, 2> temp;
-        if (!fs_.read((char*)temp.data(), sizeof(uint16_t)))
+        unsigned char header[7] = {0};
+        uint16_t len = adts_header();
+        if (0 == len)
         {
             return false;
         }
+        adts_data(len - 7);
+        return true;
+    }
 
-        if ((temp[0] & 0xff) == 0xff && (temp[1] & 0xf0) == 0xf0) 
+    uint16_t adts_header()
+    {
+        unsigned char header[7] = {0};
+        if (!fs_.read((char*)header, 7))
         {
-            fs_.seekg(-2,std::ios_base::cur);
+            return 0;
+        }
+        
+        if (!adts_fixed_header(header))
+        {
+            return 0;
+        }
+        return adts_variable_header(header);
+    }
+
+    bool adts_fixed_header(unsigned char* header)
+    {
+        return syncword(header);
+    }
+
+    uint16_t adts_variable_header(unsigned char* header)
+    {
+        static int num = 0;
+        
+        std::cout << num++ << "\t";
+
+        switch (profile(header))
+        {
+        case 0: std::cout << "Main"; break;
+        case 1: std::cout << "LC"; break;
+        case 2: std::cout << "SSR"; break;
+        default: std::cout << "unkown"; break;
+        }
+
+        std::cout << "\t";
+
+        switch (sample_freq_index(header))
+        {
+        case 0:  std::cout << "96000Hz"; break;
+        case 1:  std::cout << "88200Hz"; break;
+        case 2:  std::cout << "64000Hz"; break;
+        case 3:  std::cout << "48000Hz"; break;
+        case 4:  std::cout << "44100Hz"; break;
+        case 5:  std::cout << "32000Hz"; break;
+        case 6:  std::cout << "24000Hz"; break;
+        case 7:  std::cout << "22050Hz"; break;
+        case 8:  std::cout << "16000Hz"; break;
+        case 9:  std::cout << "12000Hz"; break;
+        case 10: std::cout << "11025Hz"; break;
+        case 11: std::cout << "8000Hz"; break;
+        default: std::cout << "unknown"; break;
+        }
+        std::cout << "\t";
+
+        uint16_t len = aac_frame_length(header);
+
+        std::cout << len << std::endl;
+        return len;
+    }
+
+    bool syncword(unsigned char* sync)
+    {
+        if ((sync[0] & 0xff) == 0xff && (sync[1] & 0xf0) == 0xf0) 
+        {
             return true;
         }
         return false;
     }
 
-    struct AdtsFixedHeader 
+    uint16_t aac_frame_length(unsigned char* header)
     {
-        uint16_t syncword                 : 12;
-        uint16_t id                       : 1;
-        uint16_t layer                    : 2;
-        uint16_t protection_absent        : 1;
-
-        uint16_t profile                  : 2;
-        uint16_t sampling_frequency_index : 4;
-        uint16_t private_bit              : 1;
-        uint16_t channel_configuration    : 3;
-        uint16_t original_copy            : 1;
-        uint16_t home                     : 1;
-        uint16_t emphasis                 : 2;
-    };
-
-    bool adts_fixed_header()
-    {
-        std::array<char,16> temp;
-        if (!fs_.read(temp.data(), 16));
-        {
-            return false;
-        }
-
-
-        //syncword 12bit
-        if (!fs_.read(temp.data(),12))
-        {
-            return false;
-        }
-        
-        //id 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return false;
-        }
-        
-        //layer 2bit
-        if (!fs_.read(temp.data(),2))
-        {
-            return false;
-        }
-        
-        //protection absent 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return false;
-        }
-        
-        //profile 2bit
-        if (!fs_.read(temp.data(),2))
-        {
-            return false;
-        }
-        
-        //sampling frequency index 4bit
-        if (!fs_.read(temp.data(),4))
-        {
-            return false;
-        }
-        
-        //private bit 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return false;
-        }
-        
-        //channel configuration 3bit
-        if (!fs_.read(temp.data(),3))
-        {
-            return false;
-        }
-        
-        //original/copy 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return false;
-        }
-
-        //home 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return false;
-        }
-        
-        //emphasis 2bit
-        if (!fs_.read(temp.data(),2))
-        {
-            return false;
-        }
+        bitwise b(header, 7);
+        return b.to_number<uint16_t>(30, 13);
     }
 
-    int adts_variable_header()
+    uint8_t profile(unsigned char* header) 
     {
-        std::array<char,16> temp;
-
-        //copyright identification bit 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return -1;
-        }
-
-        //copyright identification start 1bit
-        if (!fs_.read(temp.data(),1))
-        {
-            return -1;
-        }
-
-        //aac frame length 13bit
-        if (!fs_.read(temp.data(),13))
-        {
-            return -1;
-        }
-        uint32_t len = reverse_bytes(temp.data(),);
-
-        //adts buffer fullness 11bit
-        if (!fs_.read(temp.data(),11))
-        {
-            return -1;
-        }
-
-        //no raw data blocks in frame 2bit
-        if (!fs_.read(temp.data(),2))
-        {
-            return -1;
-        }
-
-        return len;
+        bitwise b(header, 7);
+        return b.to_number<uint8_t>(16, 2);
     }
 
-    bool adts_data(size_t len)
+    uint8_t sample_freq_index(unsigned char* header)
+    {
+        bitwise b(header, 7);
+        return b.to_number<uint8_t>(18, 4);
+    }
+
+
+    void adts_data(uint16_t len)
     {
         fs_.seekg(len,std::ios_base::cur);
     }
@@ -200,6 +139,7 @@ private:
     }
 
     std::fstream& fs_;
+
 };
 
 TEST(aac,parse)
