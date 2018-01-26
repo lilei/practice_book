@@ -1,14 +1,14 @@
-#ifndef NALU_H
-#define NALU_H
+#ifndef RTP_H264_H
+#define RTP_H264_H
+
 #include <stdint.h>
 #include <vector>
 #include <string>
 #include <iostream>
-#include "bitwise.h"
+#include "bit_parser.h"
 
 /*
-    H.264 / RTP (RFC 6184)
-    HEVC  / RTP (RFC 7798)
+    H.264/RTP (RFC 6184)
 */
 
 namespace rtp
@@ -17,242 +17,117 @@ namespace h264
 {
     struct NaluHeader
     {
-        uint8_t nal_unit_type      : 5;
-        uint8_t nal_ref_idc        : 2;
         uint8_t forbidden_zero_bit : 1;
+        uint8_t nal_ref_idc        : 2;
+        uint8_t nal_unit_type      : 5;
     };
 
     struct fuHeader
     {
-        uint8_t nalu_type : 5;
-        uint8_t fu_r      : 1;
-        uint8_t fu_e      : 1;
         uint8_t fu_s      : 1;
+        uint8_t fu_e      : 1;
+        uint8_t fu_r      : 1;
+        uint8_t nalu_type : 5;
     };
 
-    class RtpPayload
+    class RtpPayload :public BitParser
     {
     public:
-        RtpPayload(char* data,int len) 
-            :data_(data),
-            len_(len),
-            packet_type_(0),
-            important_(false)
+        RtpPayload (char* data,int len) 
+            :BitParser(data,len)
         {
             parse();
-        }
-
-        int packet_type() const
-        {
-            return packet_type_;
-        }
-
-        /*
-            sps pps sei idr is important
-            non-idr is unimportant
-        */
-        bool important() const
-        {
-            return important_;
         }
 
     private:
         void parse()
         {
-            h264::NaluHeader* header = (h264::NaluHeader*)(data_);
-            packet_type_ = header->nal_unit_type;
-
-            /*single nalu*/
-            if (packet_type_ > 0 && packet_type_ < 24)
+            NaluHeader header = {0};
+            nalu_header(header);
+            if (header.nal_unit_type < 24 && header.nal_unit_type > 0)
             {
-                nalu((NaluHeader*)data_);
+                back(8);
+                nalu(header,0);
             }
-            /*STAP-A*/
-            else if (24 == packet_type_)
+            else if (24 == header.nal_unit_type)
             {
                 stap_a();
             }
-            /*FU-A*/
-            else if (28 == packet_type_)
+            else if (28 == header.nal_unit_type)
             {
-                fu((fuHeader*)(data_ + 1));
-            }
-            else
-            {
-                std::cout << "unkonwn packet type" << packet_type_ << std::endl;
+                fuHeader header;
+                fu(header);
             }
         }
 
-        /*return the nal uint type*/
-        int nalu(NaluHeader* header)
+        bool nalu_header(NaluHeader& header)
         {
-            std::cout << (int)(header->nal_unit_type) << std::endl;
-            important(header->nal_unit_type);
-            return header->nal_unit_type;
+            if (eof())
+            {
+                return false;
+            }
+
+            header.forbidden_zero_bit = get<uint8_t>(1);
+            header.nal_ref_idc        = get<uint8_t>(2);
+            header.nal_unit_type      = get<uint8_t>(5);
+            return true;
         }
 
-        /*STAP-A: singile-time aggregation packet */
+        bool nalu(NaluHeader& header,int size)
+        {
+            if (!nalu_header(header))
+            {
+                return false;
+            }
+            std::cout << (int)header.nal_unit_type << std::endl;
+            consume(size * 8 - 8);
+            return true;
+        }
+
         void stap_a()
         {
-            int offset = 1;
-            do
+            uint16_t size = 0;
+            while (nalu_size(size))
             {
-                uint16_t nalu_len = *(uint16_t*)(data_ + offset);
-                bitwise::reverse_byte((unsigned char*)&nalu_len, 2);
-                //padding
-                if (0 == nalu_len)
-                {
-                    break;
-                }
-
-                nalu((NaluHeader*)(data_ + offset + 2));
-                offset += (2 + nalu_len);
-                if (offset == len_)
-                {
-                    break;
-                }
-            } while (true);
-        }
-
-        /*return the nal uint type*/
-        int fu(fuHeader *header)
-        {
-            std::cout << (int)(header->nalu_type) << std::endl;
-            important(header->nalu_type);
-            return header->nalu_type;
-        }
-
-        void important(int nalu_type)
-        {
-            if (5 == nalu_type || /*idr*/
-                6 == nalu_type || /*sei*/
-                7 == nalu_type || /*sps*/
-                8 == nalu_type)   /*pps*/
-            {
-                if (!important_)
-                {
-                    important_ = true;
-                }
+                NaluHeader header = {0};
+                nalu(header, size);
             }
         }
 
-        int packet_type_;
-        char* data_;
-        int len_;
-        bool important_;
-        
+        bool fu(fuHeader& header)
+        {
+            if (eof())
+            {
+                return false;
+            }
+            header.fu_s      = get<uint8_t>(1);
+            header.fu_e      = get<uint8_t>(1);
+            header.fu_r      = get<uint8_t>(1);
+            header.nalu_type = get<uint8_t>(5);
+            std::cout << (int)header.nalu_type << std::endl;
+            return true;
+        }
+
+        bool nalu_size(uint16_t& len)
+        {
+            if (eof())
+            {
+                return false;
+            }
+            len = get<uint16_t>(16);
+
+            //padding
+            if (0 == len)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
     };
 
 };/*end of namespace h264*/
-
-namespace h265
-{
-    struct NaluHeader 
-    {
-        uint16_t nuh_tid             : 3;
-        uint16_t nuh_layer_id        : 6;
-        uint16_t nal_unit_type       : 6;
-        uint16_t forbidden_zero_bit  : 1;
-    };
-
-    struct Nalu
-    {
-        NaluHeader nalu_header;
-        char*      nalu_data;
-        uint16_t   nalu_len; /*include the header len*/
-    };
-
-    struct fuHeader
-    {
-        uint8_t nalu_type : 6; 
-        uint8_t fu_e      : 1;
-        uint8_t fu_s      : 1;
-    };
-
-    struct Fu
-    {
-        fuHeader fu_header;
-        char*    fu_data;
-        uint16_t fu_len; /*include the header len*/
-    };
-
-        std::vector<std::string> NaluType = {
-        "TRAIL_N",       
-        "TRAIL_R",       
-        "TSA_N",
-        "TLA",
-        "STSA_N",
-        "STSA_R",
-        "RADL_N",
-        "DLP",
-        "RASL_N",
-        "TFD",
-        "RESERVED_10",
-        "RESERVED_11",
-        "RESERVED_12",
-        "RESERVED_13",
-        "RESERVED_14",
-        "RESERVED_15",
-        "BLA",
-        "BLANT",
-        "BLA_N_LP",
-        "IDR",
-        "IDR_N_LP",
-        "CRA",
-        "RESERVED_22",
-        "RESERVED_23",
-        "RESERVED_24",
-        "RESERVED_25",
-        "RESERVED_26",
-        "RESERVED_27",
-        "RESERVED_28",
-        "RESERVED_29",
-        "RESERVED_30",
-        "RESERVED_31",
-        "VPS",
-        "SPS",
-        "PPS",
-        "ACCESS_UNIT_DELIMITER",
-        "EOS",
-        "EOB",
-        "FILLER_DATA",
-        "SEI",
-        "SEI_SUFFIX",
-        "RESERVED_41",
-        "RESERVED_42",
-        "RESERVED_43",
-        "RESERVED_44",
-        "RESERVED_45",
-        "RESERVED_46",
-        "RESERVED_47",
-        "UNSPECIFIED_48",
-        "UNSPECIFIED_49",
-        "UNSPECIFIED_50",
-        "UNSPECIFIED_51",
-        "UNSPECIFIED_52",
-        "UNSPECIFIED_53",
-        "UNSPECIFIED_54",
-        "UNSPECIFIED_55",
-        "UNSPECIFIED_56",
-        "UNSPECIFIED_57",
-        "UNSPECIFIED_58",
-        "UNSPECIFIED_59",
-        "UNSPECIFIED_60",
-        "UNSPECIFIED_61",
-        "UNSPECIFIED_62",
-        "UNSPECIFIED_63",
-        "INVALID"
-    };
-};
-
-enum CODEC
-{
-    CODEC_H264,
-    CODEC_H265,
-    CODEC_AAC
-};
-
-
 
 }; /*end of namespace rtp*/
 
