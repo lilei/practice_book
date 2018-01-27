@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project(practice)
 
-include_directories(../include)
+include_directories(../include ./src ./src/media ./src/network ./src/parser)
 link_directories(${PROJECT_SOURCE_DIR}/../lib)
 
-AUX_SOURCE_DIRECTORY(./src src_list)
-add_executable(practice ${src_list})
+AUX_SOURCE_DIRECTORY(./src src)
+AUX_SOURCE_DIRECTORY(./src/media  media)
+AUX_SOURCE_DIRECTORY(./src/network network)
+AUX_SOURCE_DIRECTORY(./src/parser parser)
+add_executable(practice ${src} ${media} ${network} ${parser})
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 if(UNIX)
