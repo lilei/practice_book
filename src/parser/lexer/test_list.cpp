@@ -53,6 +53,19 @@ TEST(list_parser, parser)
         std::cout << e;
     }
 }
+TEST(list_parser, parser_nest_list)
+{
+    ListParser parser("[a,[c,d],b]");
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+
+}
 
 TEST(list_parser, parser_error)
 {
@@ -67,3 +80,29 @@ TEST(list_parser, parser_error)
     }
 }
 
+TEST(list_parser, parser_error1)
+{ 
+    ListParser parser("[a,[b]");
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
+
+
+TEST(list_parser, parser_error2)
+{ 
+    ListParser parser("[a,&b]");
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
