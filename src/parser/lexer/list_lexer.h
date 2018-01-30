@@ -1,25 +1,25 @@
+#ifndef LIST_LEXER_H
+#define LIST_LEXER_H
+
 #include "parser_lexer.h"
-#include "parser_token.h"
 #include "parser_error.h"
+#include "list_token.h"
 #include <string>
 #include <vector>
 
-using namespace parser;
+
+/*
+    NAME     : LETTER+ ;                 // name is sequence of >=1 letter
+    LETTER   : 'a'..'z'|'A'..'Z';        // define what a letter is
+    WS       : (' '|'\t'|'\n'|'\r')+ {skip();} ; // throw out whitespace
+*/
 
 class ListLexer :public Lexer
 {
 public:
-    const int EOF_TYPE  = 1;
-    const int NAME      = 2;
-    const int COMMA     = 3;
-    const int LBRACK    = 4;
-    const int RBRACK    = 5;
-    const std::vector<std::string> token_name_ = { "n/a", "<EOF>", "NAME", "COMMA", "LBRACK", "RBRACK" };
-
-    ListLexer(std::string input)
+    explicit ListLexer(std::string input)
         :Lexer(input)
     {}
-
 
     Token next_token() 
     {
@@ -49,7 +49,7 @@ public:
                 }
                 else
                 {
-                    throw Error(Error::INVALID_CHAR,c);
+                    throw ParserError().found(c);
                 }
             }
         }
@@ -57,7 +57,6 @@ public:
     }
 
 private:
-    /** NAME : ('a'..'z'|'A'..'Z')+; // NAME is sequence of >=1 letter */
     Token name() 
     {
         std::string buf;
@@ -76,5 +75,6 @@ private:
             consume();
         }
     }
-
 };
+
+#endif /* LIST_LEXER_H */

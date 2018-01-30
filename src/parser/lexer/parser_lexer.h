@@ -1,11 +1,11 @@
-#include <string>
+#ifndef PARSER_LEXER_H
+#define PARSER_LEXER_H
 
-namespace parser
-{
+#include <string>
 
 class Lexer
 {
-protected:
+public:
     Lexer(std::string& input)
         :input_(input), p(0), c(input[0])
     {}
@@ -44,11 +44,10 @@ protected:
         return (c >= 'a' && c <= 'z') || (c >= 'A'&&c <= 'Z');
     }
 
-protected:
+public:
     std::string input_;
-    int p;
+    size_t p;
     char c;
 };
 
-}
-
+#endif /* PARSER_LEXER_H */
