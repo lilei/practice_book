@@ -46,8 +46,7 @@ namespace h265
             uint8_t packet_type = look_ahead<uint8_t>(1,6);
             if (packet_type < 41)
             {
-                NaluHeader header = {0};
-                nalu(header,0);
+                nalu(0);
             }
             else if (48 == packet_type)
             {
@@ -55,8 +54,7 @@ namespace h265
             }
             else if (49 == packet_type)
             {
-                fuHeader header;
-                fu(header);
+                fu();
             }
             else if (50 == packet_type)
             {
@@ -78,8 +76,9 @@ namespace h265
             return true;
         }
 
-        bool nalu(NaluHeader& header,int size)
+        bool nalu(int size)
         {
+            NaluHeader header = {0};
             if (!nalu_header(header))
             {
                 return false;
@@ -91,25 +90,25 @@ namespace h265
 
         void aps()
         {
+            NaluHeader header = {0};
+            nalu_header(header);
             uint16_t size = 0;
             while (nalu_size(size))
             {
                 NaluHeader header = {0};
-                nalu(header, size);
+                nalu(size);
             }
         }
 
-        bool fu(fuHeader& header)
+        void fu()
         {
-            if (eof())
-            {
-                return false;
-            }
-            header.fu_s      = read<uint8_t>(1);
-            header.fu_e      = read<uint8_t>(1);
-            header.nalu_type = read<uint8_t>(6);
-            std::cout << (int)header.nalu_type << std::endl;
-            return true;
+            NaluHeader nalu_hdr = {0};
+            nalu_header(nalu_hdr);
+            fuHeader fu_header = {0};
+            fu_header.fu_s      = read<uint8_t>(1);
+            fu_header.fu_e      = read<uint8_t>(1);
+            fu_header.nalu_type = read<uint8_t>(6);
+            std::cout << (int)fu_header.nalu_type << std::endl;
         }
 
         bool paci()

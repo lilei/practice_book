@@ -22,8 +22,8 @@ TEST(rtp,rtp)
         char* payload = NULL;
         int payload_len = 0;
         packet.payload(&payload,payload_len);
-        rtp::h264::RtpPayload(payload,payload_len);
-        //rtp::h265::RtpPayload(payload, payload_len);
+        //rtp::h264::RtpPayload(payload,payload_len);
+        rtp::h265::RtpPayload(payload, payload_len);
     }
 }
 
