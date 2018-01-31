@@ -42,18 +42,16 @@ namespace h264
     private:
         void parse()
         {
-            NaluHeader header = {0};
-            nalu_header(header);
-            if (header.nal_unit_type < 24 && header.nal_unit_type > 0)
+            uint8_t packet_type = look_ahead<uint8_t>(3, 5);
+            if (packet_type < 24 && packet_type > 0)
             {
-                back(8);
-                nalu(header,0);
+                nalu(0);
             }
-            else if (24 == header.nal_unit_type)
+            else if (24 == packet_type)
             {
                 stap_a();
             }
-            else if (28 == header.nal_unit_type)
+            else if (28 == packet_type)
             {
                 fuHeader header;
                 fu(header);
@@ -67,14 +65,15 @@ namespace h264
                 return false;
             }
 
-            header.forbidden_zero_bit = get<uint8_t>(1);
-            header.nal_ref_idc        = get<uint8_t>(2);
-            header.nal_unit_type      = get<uint8_t>(5);
+            header.forbidden_zero_bit = read<uint8_t>(1);
+            header.nal_ref_idc        = read<uint8_t>(2);
+            header.nal_unit_type      = read<uint8_t>(5);
             return true;
         }
 
-        bool nalu(NaluHeader& header,int size)
+        bool nalu(int size)
         {
+            NaluHeader header = {0};
             if (!nalu_header(header))
             {
                 return false;
@@ -86,24 +85,23 @@ namespace h264
 
         void stap_a()
         {
+            NaluHeader header = {0};
+            nalu_header(header);
             uint16_t size = 0;
             while (nalu_size(size))
             {
-                NaluHeader header = {0};
-                nalu(header, size);
+                nalu(size);
             }
         }
 
         bool fu(fuHeader& header)
         {
-            if (eof())
-            {
-                return false;
-            }
-            header.fu_s      = get<uint8_t>(1);
-            header.fu_e      = get<uint8_t>(1);
-            header.fu_r      = get<uint8_t>(1);
-            header.nalu_type = get<uint8_t>(5);
+            NaluHeader nalu_hdr = {0};
+            nalu_header(nalu_hdr);
+            header.fu_s      = read<uint8_t>(1);
+            header.fu_e      = read<uint8_t>(1);
+            header.fu_r      = read<uint8_t>(1);
+            header.nalu_type = read<uint8_t>(5);
             std::cout << (int)header.nalu_type << std::endl;
             return true;
         }
@@ -114,7 +112,7 @@ namespace h264
             {
                 return false;
             }
-            len = get<uint16_t>(16);
+            len = read<uint16_t>(16);
 
             //padding
             if (0 == len)

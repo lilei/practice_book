@@ -17,25 +17,18 @@ namespace h265
 {
     struct NaluHeader 
     {
-        uint16_t nuh_tid             : 3;
-        uint16_t nuh_layer_id        : 6;
-        uint16_t nal_unit_type       : 6;
         uint16_t forbidden_zero_bit  : 1;
+        uint16_t nal_unit_type       : 6;
+        uint16_t nuh_layer_id        : 6;
+        uint16_t nuh_tid             : 3;
     };
 
 
     struct fuHeader
     {
-        uint8_t nalu_type : 6; 
-        uint8_t fu_e      : 1;
         uint8_t fu_s      : 1;
-    };
-
-    struct Fu
-    {
-        fuHeader fu_header;
-        char*    fu_data;
-        uint16_t fu_len; /*include the header len*/
+        uint8_t fu_e      : 1;
+        uint8_t nalu_type : 6; 
     };
 
     class RtpPayload :public BitParser
@@ -47,32 +40,25 @@ namespace h265
             parse();
         }
 
-        int packet_type() const
-        {
-            return packet_type_;
-        }
-
     private:
         void parse()
         {
-            NaluHeader header = {0};
-            nalu_header(header);
-            if (header.nal_unit_type < 41)
+            uint8_t packet_type = look_ahead<uint8_t>(1,6);
+            if (packet_type < 41)
             {
-                back(16);
                 NaluHeader header = {0};
                 nalu(header,0);
             }
-            else if (48 == header.nal_unit_type)
+            else if (48 == packet_type)
             {
                 aps();
             }
-            else if (49 == header.nal_unit_type)
+            else if (49 == packet_type)
             {
                 fuHeader header;
                 fu(header);
             }
-            else if (50 == header.nal_unit_type)
+            else if (50 == packet_type)
             {
                 paci();
             }
@@ -85,10 +71,10 @@ namespace h265
                 return false;
             }
 
-            header.forbidden_zero_bit = get<uint8_t>(1);
-            header.nal_unit_type      = get<uint8_t>(6);
-            header.nuh_layer_id       = get<uint8_t>(6);
-            header.nuh_tid            = get<uint8_t>(3);
+            header.forbidden_zero_bit = read<uint8_t>(1);
+            header.nal_unit_type      = read<uint8_t>(6);
+            header.nuh_layer_id       = read<uint8_t>(6);
+            header.nuh_tid            = read<uint8_t>(3);
             return true;
         }
 
@@ -119,9 +105,9 @@ namespace h265
             {
                 return false;
             }
-            header.fu_s      = get<uint8_t>(1);
-            header.fu_e      = get<uint8_t>(1);
-            header.nalu_type = get<uint8_t>(6);
+            header.fu_s      = read<uint8_t>(1);
+            header.fu_e      = read<uint8_t>(1);
+            header.nalu_type = read<uint8_t>(6);
             std::cout << (int)header.nalu_type << std::endl;
             return true;
         }
@@ -147,7 +133,7 @@ namespace h265
             {
                 return false;
             }
-            len = get<uint16_t>(16);
+            len = read<uint16_t>(16);
 
             //padding
             if (0 == len)
@@ -158,11 +144,6 @@ namespace h265
             return true;
         }
 
-        int packet_type_;
-        char* data_;
-        int len_;
-        bool important_;
-        
     };
 };/*end of namespace h265*/
 

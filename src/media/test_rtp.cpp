@@ -2,7 +2,7 @@
 #include "media/rtp.h"
 #include "media/bit_utils.h"
 #include "network/network.h"
-//#include "media/rtp_h264.h"
+#include "media/rtp_h264.h"
 #include "media/rtp_h265.h"
 #include <fstream>
 
@@ -22,8 +22,8 @@ TEST(rtp,rtp)
         char* payload = NULL;
         int payload_len = 0;
         packet.payload(&payload,payload_len);
-        //rtp::h264::RtpPayload(payload,payload_len);
-        rtp::h265::RtpPayload(payload, payload_len);
+        rtp::h264::RtpPayload(payload,payload_len);
+        //rtp::h265::RtpPayload(payload, payload_len);
     }
 }
 

@@ -15,10 +15,26 @@ public:
     }
 
     template<typename T>
-    T get(int bit_len)
+    T next_filed(int bit_len)
     {
         T value = bits_.to_number<T>(offset_,bit_len);
         offset_ += bit_len;
+        return value;
+    }
+
+
+    template<typename T>
+    T look_ahead(int start,int bit_len)
+    {
+        T value = bits_.to_number<T>(start,bit_len);
+        return value;
+    }
+
+    template<typename T>
+    T read(int bit_len)
+    {
+        T value = bits_.to_number<T>(offset_,bit_len);
+        consume(bit_len);
         return value;
     }
 
@@ -26,11 +42,6 @@ public:
     {
         offset_ += bit_len;
         return *this;
-    }
-
-    void back(int bit_len)
-    {
-        offset_ -= bit_len;
     }
 
     bool eof()

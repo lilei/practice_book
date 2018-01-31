@@ -22,7 +22,7 @@ public:
 private:
     bool adts()
     {
-        unsigned char header[7] = {0};
+        char header[7] = {0};
         uint16_t len = adts_header();
         if (0 == len)
         {
@@ -34,7 +34,7 @@ private:
 
     uint16_t adts_header()
     {
-        unsigned char header[7] = {0};
+        char header[7] = {0};
         if (!fs_.read((char*)header, 7))
         {
             return 0;
@@ -47,12 +47,12 @@ private:
         return adts_variable_header(header);
     }
 
-    bool adts_fixed_header(unsigned char* header)
+    bool adts_fixed_header(char* header)
     {
         return syncword(header);
     }
 
-    uint16_t adts_variable_header(unsigned char* header)
+    uint16_t adts_variable_header(char* header)
     {
         static int num = 0;
         
@@ -92,7 +92,7 @@ private:
         return len;
     }
 
-    bool syncword(unsigned char* sync)
+    bool syncword(char* sync)
     {
         if ((sync[0] & 0xff) == 0xff && (sync[1] & 0xf0) == 0xf0) 
         {
@@ -101,19 +101,19 @@ private:
         return false;
     }
 
-    uint16_t aac_frame_length(unsigned char* header)
+    uint16_t aac_frame_length(char* header)
     {
         bitwise b(header, 7);
         return b.to_number<uint16_t>(30, 13);
     }
 
-    uint8_t profile(unsigned char* header) 
+    uint8_t profile(char* header) 
     {
         bitwise b(header, 7);
         return b.to_number<uint8_t>(16, 2);
     }
 
-    uint8_t sample_freq_index(unsigned char* header)
+    uint8_t sample_freq_index(char* header)
     {
         bitwise b(header, 7);
         return b.to_number<uint8_t>(18, 4);
@@ -123,19 +123,6 @@ private:
     void adts_data(uint16_t len)
     {
         fs_.seekg(len,std::ios_base::cur);
-    }
-
-    uint32_t reverse_bytes(unsigned char *temp, int size)
-    {
-        assert(size <= 4);
-        uint32_t r = 0;
-        for (int i = 0; i < size; i++)
-        {
-            int x = temp[i];
-            x = x << ((size - 1 - i) * 8);
-            r |= x;
-        }
-        return r;
     }
 
     std::fstream& fs_;
