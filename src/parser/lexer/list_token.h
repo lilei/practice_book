@@ -11,7 +11,8 @@ const static int NAME      = 2;
 const static int COMMA     = 3;
 const static int LBRACK    = 4;
 const static int RBRACK    = 5;
-const std::vector<std::string> token_name_ = { "n/a", "<EOF>", "NAME", "COMMA", "LBRACK", "RBRACK" };
+const static int EQUAL     = 6;
+const std::vector<std::string> token_name_ = { "n/a", "<EOF>", "NAME", "COMMA", "LBRACK", "RBRACK","EUQAL" };
 
 class Token
 {

@@ -42,6 +42,9 @@ public:
             case ']':
                 consume();
                 return Token(RBRACK, "]");
+            case '=':
+                consume();
+                return Token(EQUAL,"=");
             default:
                 if (is_letter())
                 {

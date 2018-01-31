@@ -8,7 +8,7 @@ std::ostream& operator<<(std::ostream& out,const ParserError& e)
     }
     else
     {
-        out << "expecting " << e.expect_ << "; found" << e.found_ << std::endl;
+        out << "expecting " << e.expect_ << ";found " << e.found_ << std::endl;
     }
     return out;
 }

@@ -1,5 +1,6 @@
 #include "list_lexer.h"
 #include "list_parser.h"
+#include "list_parser_ex.h"
 #include <gtest/gtest.h>
 
 TEST(list_parser,lexer)
@@ -97,6 +98,59 @@ TEST(list_parser, parser_error1)
 TEST(list_parser, parser_error2)
 { 
     ListParser parser("[a,&b]");
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
+
+TEST(list_parserex,parser)
+{
+    ListParserEx parser("[a,c = d,b]",2);
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
+
+TEST(list_parserex,parser_nest)
+{
+    ListParserEx parser("[a,c = d,[d,f=g],b]",2);
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
+
+
+TEST(list_parserex,parser_error1)
+{
+    ListParserEx parser("[a,c = 1,b]",2);
+    try
+    {
+        parser.list();
+    }
+    catch (const ParserError&e)
+    {
+        std::cout << e;
+    }
+}
+
+TEST(list_parserex,parser_error2)
+{
+    ListParserEx parser("[a,c = d e,b]",2);
     try
     {
         parser.list();
