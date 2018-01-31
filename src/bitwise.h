@@ -8,7 +8,7 @@
 class bitwise
 {
 public:
-    bitwise(unsigned char* data,int len)
+    bitwise(char* data,int len)
         :data_(data),len_(len)
     {}
 
@@ -18,77 +18,79 @@ public:
     void set(int offset)
     {
         int pos = 0;
-        unsigned char* start = goto_pos(offset,pos);
+        char* start = goto_pos(offset,pos);
         *start |= 1u << (7 - pos);
     }
 
     void clear(int offset)
     {
         int pos = 0;
-        unsigned char* start = goto_pos(offset,pos);
+        char* start = goto_pos(offset,pos);
         *start &= ~(1u << (7 - pos));
     }
 
     void toggle(int offset) 
     {
         int pos = 0;
-        unsigned char* start = goto_pos(offset,pos);
+        char* start = goto_pos(offset,pos);
         *start ^= 1u << (7 - pos);
     }
 
     bool check(int offset) 
     {
         int pos = 0;
-        unsigned char* start = goto_pos(offset,pos);
+        char* start = goto_pos(offset,pos);
         return (*start >> (7 - pos)) & 1u;
     }
 
-    uint16_t to_uint16(int offset,int len)
+    int size()
     {
-        assert(len < 16);
-        uint16_t number = 0;
-        bitwise n((unsigned char*)&number,sizeof(uint16_t));
+        return len_;
+    }
+
+    template<typename T>
+    T to_number(int offset,int len)
+    {
+        assert(len <= sizeof(T) * 8);
+        T number = 0;
+        bitwise n((char*)&number,sizeof(T));
         for (int i = 0; i < len; i++)
         {
             if (check(i + offset))
             {
-                n.set(i + 16 - len);
+                n.set(i + sizeof(T) * 8 - len);
             }
         }
-        std::cout << std::endl;
-        reverse_byte((unsigned char*)&number, sizeof(number));
+        reverse_byte((char*)&number, sizeof(number));
         return number;
     }
 
 
-    static void swap(unsigned char &left, unsigned char &right);
-    static void reverse_byte(unsigned char* data, int len);
+    static void swap(char &left, char &right)
+    {
+        char temp = left;
+        left = right;
+        right = temp;
+    }
+    static void reverse_byte(char* data, int len)
+    {
+       for (int i = 0;i < len /2;i++)
+       {
+           swap(*(data + i), *(data + len - 1 - i));
+       }
+    }
 
 private:
-    unsigned char* goto_pos(int offset,int &pos)
+    char* goto_pos(int offset,int &pos)
     {
-        unsigned char* start = data_ + offset / 8;
+        char* start = data_ + offset / 8;
         pos = offset % 8;
         return start;
     }
 
-    unsigned char* data_;
+    char* data_;
     int len_;
 };
 
-void bitwise::swap(unsigned char &left, unsigned char &right)
-{
-    char temp = left;
-    left = right;
-    right = temp;
-}
-
-void bitwise::reverse_byte(unsigned char* data, int len)
-{
-   for (int i = 0;i < len /2;i++)
-   {
-       swap(*(data + i), *(data + len - 1 - i));
-   }
-}
 
 #endif /* BITWISE_H */
