@@ -1,13 +1,15 @@
 #ifndef PS_PARSER_H
 #define PS_PARSER_H
-#include "bit_parser.h"
+#include "bitstream.h"
 #include <assert.h>
 
-class PSParser :public BitParser
+/*mpeg-2 programe stream*/
+
+class PSParser 
 {
 public:
-    PSParser(char* data, int len)
-        :BitParser(data, len)
+    PSParser(BitStream* input)
+        :input_(input)
     {}
 
     void parse()
@@ -15,13 +17,14 @@ public:
         do 
         {
             pack();
-        } while (look_ahead<uint32_t>(0,24) == 0x000001);
+        } while (start_code());
     }
 
+private:
     void pack()
     {
         pack_header();
-        while (look_ahead<uint32_t>(0,24) == 0x000001)
+        while (packet_start_code_prefix())
         {
             pes_packet();
         }
@@ -29,63 +32,105 @@ public:
 
     void pack_header()
     {
-        uint32_t pack_start_code = read<uint32_t>(32);
-        assert(pack_start_code == 0x000001BA);
-        assert(read<uint8_t>(2) == 1);
-        read<uint8_t>(3);  // system_clock_refernce_base
-        read<uint8_t>(1);  //marker_bit
-        read<uint8_t>(15); // system_clock_refernce_base
-        read<uint8_t>(1);  //marker_bit
-        read<uint8_t>(15); // system_clock_refernce_base
-        read<uint8_t>(1);  //marker_bit
-        read<uint8_t>(9);  // system_clock_refernce_extension
-        read<uint8_t>(1);  //marker_bit
-        read<uint32_t>(22); //program_mux_rate
-        read<uint8_t>(1);  //marker_bit
-        read<uint8_t>(1);  //marker_bit
-        read<uint8_t>(5);  //reserved
-        uint8_t len = read<uint8_t>(3);  //pack_stuffing_length
-        for (int i = 0;i < len;i++)
-        {
-            read<uint8_t>(8);  //stuffing_byte
-        }
-        if (look_ahead<uint32_t>(0,32) == 1)
+        uint32_t start_code = input_->read_field<uint32_t>(32);
+        input_->read_field<uint8_t>(2); // '01'
+        input_->read_field<uint8_t>(3); 
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint16_t>(15); 
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint16_t>(15); 
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint16_t>(9); 
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint32_t>(22);  //programe_mux_rate
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint8_t>(5); //reserved
+        uint8_t stuffing_len = input_->read_field<uint8_t>(3); //stuffing_length
+        char* stuffing = NULL;
+        input_->read_chunk(&stuffing,stuffing_len);
+        if (system_header_start_code())
         {
             system_header();
         }
+    }
 
+
+    void system_header()
+    {
+        input_->read_field<uint32_t>(32); //system header start code
+        uint16_t header_len = input_->read_field<uint16_t>(16);
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint32_t>(22); //rate_bound
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint8_t>(6); //audio_bound
+        input_->read_field<uint8_t>(1); //fixed_flag
+        input_->read_field<uint8_t>(1); //SCPS_flag
+        input_->read_field<uint8_t>(1); //system_audio_lock_flag
+        input_->read_field<uint8_t>(1); //system_video_lock_flag
+        input_->read_field<uint8_t>(1); //marker_bit
+        input_->read_field<uint8_t>(5); //video_bound
+        input_->read_field<uint8_t>(1); //packet_rate_restriction_flag
+        input_->read_field<uint8_t>(7); //reserved_bits
+
+        while (input_->look_ahead<uint8_t>(0,1) == 1)
+        {
+            uint8_t stream_id = input_->read_field<uint8_t>(8);
+            input_->read_field<uint8_t>(2); //'11'
+            input_->read_field<uint8_t>(1); //P-STD_buffer_bound_scale
+            input_->read_field<uint16_t>(13); //P-STD_buffer_size_bound
+        }
     }
 
     void pes_packet()
     {
-        read<uint32_t>(24); //packet_start_code_prefix 0x000001
-        read<uint8_t>(8); //sterm_id
-        uint16_t len = read<uint16_t>(16); //PES_packet_length
-        consume(len * 8);
+        uint32_t packet_start_code_prefix = input_->read_field<uint32_t>(24);
+        uint8_t stream_id = input_->read_field<uint8_t>(8);
+        uint16_t pes_packet_length = input_->read_field<uint16_t>(16);
+        char* data = 0;
+        std::cout << "stream id: " << std::hex << (int)stream_id
+            << " pes_length:" << std::dec << (int)pes_packet_length << std::endl;
+        input_->read_chunk(&data, pes_packet_length);
     }
 
-    void system_header()
+    bool start_code()
     {
-        read<uint32_t>(32);  //system_header_start_code
-        read<uint16_t>(16);  //header_length
-        read<uint8_t>(1);    //marker_bit
-        read<uint32_t>(22);  //rate_bound
-        read<uint8_t>(1);    //marker_bit
-        read<uint32_t>(6);   //audio_bound
-        read<uint8_t>(1);    //fixed_flag
-        read<uint8_t>(1);    //CSPS_flag
-        read<uint8_t>(1);    //system_audio_lock_flag
-        read<uint8_t>(1);    //system_video_lock_flag
-        read<uint8_t>(1);    //marker_bit
-        read<uint32_t>(5);   //video_bound
-        read<uint8_t>(1);    //packet_rate_restriction_flag
-        while (look_ahead<uint8_t>(0,1) == '1')
+        uint32_t start_code = input_->look_ahead<uint32_t>(0,32);
+        if (0x01BA == start_code)
         {
-            read<uint8_t>(8);   //stream_id
-            read<uint8_t>(2);   //'11'
-            read<uint8_t>(1);   //P-STD_buffer_bound_scale
-            read<uint8_t>(13);  //P-STD_buffer_size_bound
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
+
+    bool packet_start_code_prefix()
+    {
+        uint32_t prefix = input_->look_ahead<uint32_t>(0,24);
+        if (1 == prefix)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool system_header_start_code()
+    {
+        uint32_t code = input_->look_ahead<uint32_t>(0, 32);
+        if (0x01BB == code)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    BitStream* input_;
 };
 #endif /* PS_PARSER_H */

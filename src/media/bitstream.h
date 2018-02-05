@@ -114,7 +114,7 @@ private:
 
     int rest_size() const
     {
-        return  end_pos() - read_ + 1;
+        return  end_pos() - read_;
     }
 
     bool overflow(int bit_len) const
