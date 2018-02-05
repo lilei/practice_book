@@ -4,6 +4,7 @@
 #include "network/network.h"
 #include "media/rtp_h264.h"
 #include "media/rtp_h265.h"
+#include "media/bitstream.h"
 #include <fstream>
 
 #pragma comment(lib, "winmm.lib")
