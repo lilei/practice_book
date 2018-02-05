@@ -64,7 +64,7 @@ class PsStream :public BitStream
 {
 public:
     PsStream(const char* file_name)
-        :BitStream(1500, 2),fs_(file_name)
+        :BitStream(1500, 4),fs_(file_name,std::fstream::binary)
     {}
 
     int on_write(char* buff,int size)
@@ -91,7 +91,7 @@ TEST(BitStream,ps)
     {
         ps.parse();
     }
-    catch (BitStreamError)
+    catch (BitStreamError& )
     {
     }
 }

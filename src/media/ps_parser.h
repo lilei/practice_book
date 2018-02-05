@@ -17,14 +17,14 @@ public:
         do 
         {
             pack();
-        } while (start_code());
+        } while (pack_start_code());
     }
 
 private:
     void pack()
     {
         pack_header();
-        while (packet_start_code_prefix())
+        while (!pack_start_code())
         {
             pes_packet();
         }
@@ -93,7 +93,7 @@ private:
         input_->read_chunk(&data, pes_packet_length);
     }
 
-    bool start_code()
+    bool pack_start_code()
     {
         uint32_t start_code = input_->look_ahead<uint32_t>(0,32);
         if (0x01BA == start_code)

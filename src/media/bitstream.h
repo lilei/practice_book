@@ -150,7 +150,8 @@ private:
         int len = on_write(write_, rest_size());
         if (len < 0)
         {
-            throw BitStreamError();
+            BitStreamError error;
+            throw error;
         }
         else
         {
