@@ -28,9 +28,14 @@ public:
     virtual ~BitStream()
     {}
 
-    char* start()
+    char* begin()
     {
-        return write_;
+        return data_.data();
+    }
+
+    char* end()
+    {
+        return data_.data() + data_.size() + 1;
     }
 
     virtual int on_write(char* buff, int size) = 0;
@@ -67,8 +72,8 @@ public:
         assert(offset_ % 8 == 0);
         if (END_POS == len)
         {
-            consume(rest_size() * 8);
-            return rest_size();
+            consume((write_ - read_) * 8);
+            return (write_ - read_);
         }
         if (overflow(len * 8))
         {
@@ -77,13 +82,13 @@ public:
         }
         *data = read_;
         int read_len = 0;
-        if (rest_size() >= len)
+        if (write_ - read_ >= len)
         {
             read_len = len;
         }
         else
         {
-            read_len = rest_size();
+            read_len = write_ - read_;
         }
         consume(read_len * 8);
         return read_len;
@@ -102,20 +107,6 @@ private:
         offset_ = offset_ % 8;
     }
     
-    const char* start_pos() const
-    {
-        return data_.data();
-    }
-
-    const char* end_pos() const
-    {
-        return data_.data() + data_.size();
-    }
-
-    int rest_size() const
-    {
-        return  end_pos() - read_;
-    }
 
     bool overflow(int bit_len) const
     {
@@ -129,25 +120,25 @@ private:
         }
     }
 
-    //move back bytes to front,to make a continuely chunk to write
+    //move back bytes to front,to make a continuous chunk to write
     void back_to_front()
     {
-        if (write_ == start_pos())
+        if (write_ == begin())
         {
             return;
         }
-        const char* last = write_;
-        write_ = (char*)start_pos();
-        for (;read_ < last;read_++,write_++)
+        int rest = write_ - read_;
+        for (int i = 0;i < rest;i++)
         {
-            *write_ = *read_;
+            *(begin() + i) = *(read_ + i);
         }
-        read_ = (char*)start_pos();
+        read_ = begin();
+        write_ = begin() + rest;
     }
 
     void fetch()
     {
-        int len = on_write(write_, rest_size());
+        int len = on_write(write_, end() - write_ - 1);
         if (len < 0)
         {
             BitStreamError error;
@@ -160,6 +151,10 @@ private:
     }
 
     std::vector<char> data_;
+
+    //the whole range is [begin,end)
+    //the readable range is [read_,write_)
+    //the writable range is [write_,end)
     char* read_;
     char* write_;
     int offset_;
