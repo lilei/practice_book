@@ -11,6 +11,14 @@ class BitStreamError
 {
 };
 
+
+/*
+    the bitstream class is used for parsing binary protocol
+    the underline of bitstream can be file or network
+    the whole range is [begin,end)
+    the readable range is [read_,write_)
+    the writable range is [write_,end)
+*/
 class BitStream
 {
 public:
@@ -33,6 +41,7 @@ public:
         return data_.data();
     }
 
+    /*the last pos plus 1*/
     char* end()
     {
         return data_.data() + data_.size() + 1;
@@ -70,25 +79,24 @@ public:
     {
         //byte alignling
         assert(offset_ % 8 == 0);
-        if (END_POS == len)
+
+        //reach the end,fetching some new data firstly
+        if (eof() && END_POS != len)
         {
-            consume((write_ - read_) * 8);
-            return (write_ - read_);
-        }
-        if (overflow(len * 8))
-        {
-            back_to_front();
+            read_ = begin();
+            write_ = begin();
             fetch();
         }
-        *data = read_;
+
         int read_len = 0;
-        if (write_ - read_ >= len)
+        //read to end
+        if (END_POS == len || write_ - read_ < len)
         {
-            read_len = len;
+            read_len = write_ - read_;
         }
         else
         {
-            read_len = write_ - read_;
+            read_len = len;
         }
         consume(read_len * 8);
         return read_len;
@@ -152,9 +160,6 @@ private:
 
     std::vector<char> data_;
 
-    //the whole range is [begin,end)
-    //the readable range is [read_,write_)
-    //the writable range is [write_,end)
     char* read_;
     char* write_;
     int offset_;

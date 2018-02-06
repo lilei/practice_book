@@ -42,7 +42,7 @@ private:
         input_->read_field<uint8_t>(1); //marker_bit
         input_->read_field<uint16_t>(9); 
         input_->read_field<uint8_t>(1); //marker_bit
-        input_->read_field<uint32_t>(22);  //programe_mux_rate
+        uint32_t mux_rate = input_->read_field<uint32_t>(22);  //programe_mux_rate
         input_->read_field<uint8_t>(1); //marker_bit
         input_->read_field<uint8_t>(1); //marker_bit
         input_->read_field<uint8_t>(5); //reserved
@@ -90,7 +90,13 @@ private:
         char* data = 0;
         std::cout << "stream id: " << std::hex << (int)stream_id
             << " pes_length:" << std::dec << (int)pes_packet_length << std::endl;
-        input_->read_chunk(&data, pes_packet_length);
+
+        int len = 0;
+        while (len < pes_packet_length)
+        {
+            int read_len = input_->read_chunk(&data, pes_packet_length - len);
+            len += read_len;
+        }
     }
 
     bool pack_start_code()
