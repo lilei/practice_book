@@ -31,6 +31,7 @@ public:
 private:
     void pack()
     {
+        std::cout << std::hex << input_->cur_pos() << "  ";
         pack_header();
         while (!pack_start_code())
         {

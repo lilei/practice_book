@@ -23,7 +23,7 @@ class BitStream
 {
 public:
     BitStream(int size,int k)
-        :offset_(0),read_(NULL)
+        :offset_(0),read_(NULL),total_read_(0)
     {
         for (int i = 0;i < size + k;i++)
         {
@@ -45,6 +45,11 @@ public:
     char* end()
     {
         return data_.data() + data_.size() + 1;
+    }
+
+    uint64_t cur_pos()
+    {
+        return total_read_ / 8;
     }
 
     virtual int on_write(char* buff, int size) = 0;
@@ -78,7 +83,7 @@ public:
     static const int END_POS = -1;
     int read_chunk(char**data,int len)
     {
-        //byte alignling
+        //byte aligning
         assert(offset_ % 8 == 0);
 
         //reach the end,fetching some new data firstly
@@ -114,6 +119,7 @@ private:
         offset_ += bit_len;
         read_ += offset_ / 8;
         offset_ = offset_ % 8;
+        total_read_ += bit_len;
     }
     
 
@@ -163,6 +169,7 @@ private:
 
     char* read_;
     char* write_;
+    uint64_t total_read_;  /*total bits have read*/
     int offset_;
 };
 

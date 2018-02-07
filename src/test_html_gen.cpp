@@ -4,6 +4,7 @@
 
 using namespace html;
 
+/*
 void print(const Node& node)
 {
     Printer printer(&std::cout);
@@ -75,7 +76,7 @@ TEST(html,node_linked)
     Node doc("html");
     doc > Body() > Div() > Span() > Img();
     print(doc);
-    //print(Html() > Body() > Div() > Span() > Img()); /* wrong linded operat returned the last node*/
+    //print(Html() > Body() > Div() > Span() > Img()); // wrong linded operat returned the last node
 }
 
 TEST(html,node_plus_node)
@@ -122,4 +123,4 @@ TEST(html,print)
     div.attri("width",3.4);
     print(div);
 }
-
+*/
