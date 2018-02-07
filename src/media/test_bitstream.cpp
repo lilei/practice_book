@@ -88,10 +88,10 @@ TEST(BitStream,ps)
     //PsStream input("../resource/264.mp4");
     PsStream input("../resource/265.mp4");
 
-    PSParser ps(&input);
+    PSParser ps;
     try
     {
-        ps.parse();
+        ps.parse(input);
     }
     catch (BitStreamError& )
     {
