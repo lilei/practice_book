@@ -19,19 +19,17 @@ public:
     {
         while (!pack_start_code())
         {
-            char* discard = NULL;
-            input_->read_chunk(&discard, 1);
+            discard_chunk(1);
         }
-        do 
+        while (pack_start_code())
         {
             pack();
-        } while (pack_start_code());
+        }
     }
 
 private:
     void pack()
     {
-        std::cout << std::hex << input_->cur_pos() << "  ";
         pack_header();
         while (!pack_start_code())
         {
@@ -56,8 +54,7 @@ private:
         input_->read_field<uint8_t>(1); //marker_bit
         input_->read_field<uint8_t>(5); //reserved
         uint8_t stuffing_len = input_->read_field<uint8_t>(3); //stuffing_length
-        char* stuffing = NULL;
-        input_->read_chunk(&stuffing,stuffing_len);
+        discard_chunk(stuffing_len);
         if (system_header_start_code())
         {
             system_header();
@@ -93,24 +90,152 @@ private:
 
     void pes_packet()
     {
+        input_->print_addr(&std::cout);
+
         uint32_t packet_start_code_prefix = input_->read_field<uint32_t>(24);
         uint8_t stream_id = input_->read_field<uint8_t>(8);
-        if (0xE2 != stream_id)
-        {
-            //std::cout << std::hex << (int)stream_id << std::endl;
-        }
         uint16_t pes_packet_length = input_->read_field<uint16_t>(16);
-        
-        char* data = 0;
-        std::cout << "stream id: " << std::hex << (int)stream_id
-            << " pes_length:" << std::dec << (int)pes_packet_length << std::endl;
 
-        int len = 0;
-        while (len < pes_packet_length)
+        std::cout << " stream_id: " << std::hex << (int)stream_id <<" length: " << std::dec << pes_packet_length << std::endl;
+
+        if (0xBC != stream_id && //program_stream_map
+            0xBE != stream_id && //padding_stream
+            0xBF != stream_id && //private_stream_2
+            0xF0 != stream_id && //ECM
+            0xF1 != stream_id && //EMM
+            0xF2 != stream_id && //DSMCC_stream
+            0xFF != stream_id && //program_stream_directory
+            0xF8 != stream_id)   //ITU-T Rec.H.222.1 type E stream
         {
-            int read_len = input_->read_chunk(&data, pes_packet_length - len);
-            len += read_len;
+            input_->read_field<uint8_t>(2);                                                  //10
+            input_->read_field<uint8_t>(2);                                                  //PES_scrambling_control
+            input_->read_field<uint8_t>(1);                                                  //PES_priority
+            input_->read_field<uint8_t>(1);                                                  //data_alignment_indicator
+            input_->read_field<uint8_t>(1);                                                  //copyright
+            input_->read_field<uint8_t>(1);                                                  //orignal_or_copy 
+            uint8_t pts_dts_flags = input_->read_field<uint8_t>(2);                          //PTS_DTS_flags
+            input_->read_field<uint8_t>(1);                                                  //ESCR_flag
+            input_->read_field<uint8_t>(1);                                                  //ES_rate_flag
+            input_->read_field<uint8_t>(1);                                                  //DSM_trick_mode_flag
+            input_->read_field<uint8_t>(1);                                                  //additional_copy_info_flag
+            input_->read_field<uint8_t>(1);                                                  //PES_CRC_flag
+            input_->read_field<uint8_t>(1);                                                  //PES_extension_flag
+            uint8_t pes_header_len = input_->read_field<uint8_t>(8);                         //PES_header_data_length
+
+            if (2 == pts_dts_flags)
+            {
+                input_->read_field<uint8_t>(4);   //0010
+                uint32_t pts1 = input_->read_field<uint32_t>(3);   //PTS[32..30]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                uint32_t pts2 = input_->read_field<uint32_t>(15); //PTS[29..15]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                uint32_t pts3 = input_->read_field<uint32_t>(15);  //PTS[14..0]
+                input_->read_field<uint8_t>(1);   //marker_bit
+
+                uint32_t timestamp = (pts1 << 30) | (pts2 << 15) | pts3;
+                discard_chunk(pes_header_len - 5);
+            }
+            else if (3 == pts_dts_flags)
+            {
+                input_->read_field<uint8_t>(4);   //0011
+                input_->read_field<uint8_t>(3);   //PTS[32..30]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                input_->read_field<uint16_t>(15); //PTS[29..15]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                input_->read_field<uint16_t>(15);  //PTS[14..0]
+                input_->read_field<uint8_t>(1);   //marker_bit
+
+                input_->read_field<uint8_t>(4);   //0001
+                input_->read_field<uint8_t>(3);   //PTS[32..30]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                input_->read_field<uint16_t>(15); //PTS[29..15]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                input_->read_field<uint16_t>(15);  //PTS[14..0]
+                input_->read_field<uint8_t>(1);   //marker_bit
+                discard_chunk(pes_header_len - 10);
+            }
+            else
+            {
+                discard_chunk(pes_header_len);
+            }
+            read_chunk(pes_packet_length - 3 - pes_header_len);
+
         }
+        else
+        {
+            read_chunk(pes_packet_length);
+        }
+        
+    }
+
+    void system_map()
+    {
+        input_->read_field<uint8_t>(1);                             //current_next_indicator 
+        input_->read_field<uint8_t>(2);                             //reserved
+        input_->read_field<uint8_t>(5);                             //program_stream_map_version
+        input_->read_field<uint8_t>(7);                             //reserved
+        input_->read_field<uint8_t>(1);                             //marker_bit
+        uint16_t ps_info_length = input_->read_field<uint16_t>(16); //program_stream_info_length
+        for (int i = 0; i < ps_info_length; i++)
+        {
+            descriptor();
+        }
+        uint16_t es_map_length = input_->read_field<uint16_t>(16); //elementary_stream_map_length
+        for (int i = 0;i < es_map_length;i++)
+        {
+            input_->read_field<uint8_t>(8);   //stream_type
+            input_->read_field<uint8_t>(8);   //elementary_stream_id
+            uint16_t es_info_length = input_->read_field<uint16_t>(16); //elementary_stram_info_length
+            for (int i = 0;i <es_info_length;i++)
+            {
+                descriptor();
+            }
+        }
+        input_->read_field<uint32_t>(32); //CRC_32
+    }
+
+    void descriptor()
+    {
+        uint8_t descriptor_tag = input_->read_field<uint8_t>(8);
+        uint8_t descriptor_length = input_->read_field<uint8_t>(8);
+        if (2 == descriptor_tag)
+        {
+            video_stream_descriptor();
+        }
+        else if (3 == descriptor_tag)
+        {
+            audio_stream_descriptor();
+        }
+        else
+        {
+            //unknown stream sescriptor
+            read_chunk(descriptor_length);
+        }
+    }
+
+    void video_stream_descriptor()
+    {
+        input_->read_field<uint8_t>(1); //multiple_frame_rate_flag
+        input_->read_field<uint8_t>(4); //frame_rate_code
+        uint8_t MPEG_1_only_flag = input_->read_field<uint8_t>(1);
+        input_->read_field<uint8_t>(1); //constrained_parameter_flag
+        input_->read_field<uint8_t>(1); //still_picture_flag
+        if (0 == MPEG_1_only_flag)
+        {
+            input_->read_field<uint8_t>(8); //profile_and_level_indication
+            input_->read_field<uint8_t>(2); //chroma_format
+            input_->read_field<uint8_t>(1); //frame_rate_extension_flag
+            input_->read_field<uint8_t>(5); //reserved
+        }
+    }
+
+    void audio_stream_descriptor()
+    {
+        input_->read_field<uint8_t>(1); //free_format_flag
+        input_->read_field<uint8_t>(1); //ID
+        input_->read_field<uint8_t>(2); //laayer
+        input_->read_field<uint8_t>(1); //variable_rate_audio_indicator
+        input_->read_field<uint8_t>(3); //reserved
     }
 
     bool pack_start_code()
@@ -149,6 +274,26 @@ private:
         else
         {
             return false;
+        }
+    }
+
+    void discard_chunk(int len)
+    {
+        int read_len = 0;
+        char* data = NULL;
+        while (read_len < len)
+        {
+            read_len += input_->read_chunk(&data, len - read_len);
+        }
+    }
+
+    void read_chunk(int len)
+    {
+        int read_len = 0;
+        char* data = NULL;
+        while (read_len < len)
+        {
+            read_len += input_->read_chunk(&data, len - read_len);
         }
     }
     BitStream* input_;

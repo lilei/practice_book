@@ -85,7 +85,8 @@ private:
 TEST(BitStream,ps)
 {
     //PsStream input("../resource/sintel.ps");
-    PsStream input("../resource/264.mp4");
+    //PsStream input("../resource/264.mp4");
+    PsStream input("../resource/265.mp4");
 
     PSParser ps(&input);
     try

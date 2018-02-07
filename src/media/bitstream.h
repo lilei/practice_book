@@ -52,6 +52,11 @@ public:
         return total_read_ / 8;
     }
 
+    void print_addr(std::ostream* s)
+    {
+        *s << std::hex << cur_pos();
+    }
+
     virtual int on_write(char* buff, int size) = 0;
 
     template<typename T>
