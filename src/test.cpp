@@ -2,7 +2,7 @@
 
 int main(int argc, char *argv[])
 {
-    testing::GTEST_FLAG(filter) = "mem_pool.*";
+    testing::GTEST_FLAG(filter) = "BitStream.ps";
     //testing::GTEST_FLAG(repeat) = 1000;
     testing::InitGoogleTest(&argc, argv);
 
