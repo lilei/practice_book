@@ -3,7 +3,10 @@
 #include "bitstream.h"
 #include <assert.h>
 
-/*mpeg-2 programe stream*/
+/* 
+    iso13812-1
+    mpeg-2 programe stream
+*/
 
 class PSParser 
 {
@@ -14,6 +17,11 @@ public:
 
     void parse()
     {
+        while (!pack_start_code())
+        {
+            char* discard = NULL;
+            input_->read_chunk(&discard, 1);
+        }
         do 
         {
             pack();
@@ -86,7 +94,12 @@ private:
     {
         uint32_t packet_start_code_prefix = input_->read_field<uint32_t>(24);
         uint8_t stream_id = input_->read_field<uint8_t>(8);
+        if (0xE2 != stream_id)
+        {
+            //std::cout << std::hex << (int)stream_id << std::endl;
+        }
         uint16_t pes_packet_length = input_->read_field<uint16_t>(16);
+        
         char* data = 0;
         std::cout << "stream id: " << std::hex << (int)stream_id
             << " pes_length:" << std::dec << (int)pes_packet_length << std::endl;

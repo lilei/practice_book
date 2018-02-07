@@ -64,6 +64,7 @@ public:
     template<typename T>
     T read_field(int bit_len)
     {
+        assert(bit_len <= sizeof(T) * 8);
         if (overflow(bit_len))
         {
             back_to_front();
