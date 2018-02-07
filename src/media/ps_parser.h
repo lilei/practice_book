@@ -1,7 +1,7 @@
 #ifndef PS_PARSER_H
 #define PS_PARSER_H
-#include "bitstream.h"
 #include "bit_parser.h"
+#include <functional>
 #include <assert.h>
 
 /* 
@@ -23,6 +23,11 @@ public:
         {
             pack();
         }
+    }
+
+    void timestamp_callback(std::function<void(uint32_t)> &func)
+    {
+        func_timestamp_ = func;
     }
 
 private:
@@ -92,7 +97,7 @@ private:
         uint8_t stream_id = read_field<uint8_t>(8);
         uint16_t pes_packet_length = read_field<uint16_t>(16);
 
-        std::cout << " stream_id: " << std::hex << (int)stream_id <<" length: " << std::dec << pes_packet_length << std::endl;
+        //std::cout << " stream_id: " << std::hex << (int)stream_id <<" length: " << std::dec << pes_packet_length << std::endl;
 
         if (0xBC != stream_id && //program_stream_map
             0xBE != stream_id && //padding_stream
@@ -129,6 +134,7 @@ private:
                 read_field<uint8_t>(1);   //marker_bit
 
                 uint32_t timestamp = (pts1 << 30) | (pts2 << 15) | pts3;
+                func_timestamp_(timestamp);
                 discard_chunk(pes_header_len - 5);
             }
             else if (3 == pts_dts_flags)
@@ -159,7 +165,7 @@ private:
         }
         else
         {
-            read_chunk(pes_packet_length);
+            discard_chunk(pes_packet_length);
         }
         
     }
@@ -272,5 +278,7 @@ private:
             return false;
         }
     }
+
+    std::function<void(uint32_t)> func_timestamp_;
 };
 #endif /* PS_PARSER_H */

@@ -1,4 +1,5 @@
 #include "bitstream.h"
+#include <functional>
 
 class BitParser
 {
@@ -8,6 +9,12 @@ public:
 
     virtual ~BitParser()
     {}
+
+public:
+    void data_callback(std::function<void(char*,int)> &func)
+    {
+        func_data_ = func;
+    }
 
 protected:
     template<typename T>
@@ -29,6 +36,7 @@ protected:
         while (read_len < len)
         {
             read_len += input_->read_chunk(&data, len - read_len);
+            func_data_(data,read_len);
         }
         return read_len;
     }
@@ -44,5 +52,6 @@ protected:
     }
 
     BitStream* input_;
+    std::function<void(char*,int)> func_data_;
 };
 
