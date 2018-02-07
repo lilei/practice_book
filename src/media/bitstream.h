@@ -99,6 +99,7 @@ public:
             fetch();
         }
 
+        *data = read_;
         int read_len = 0;
         //read to end
         if (END_POS == len || write_ - read_ < len)
