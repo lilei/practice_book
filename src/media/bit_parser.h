@@ -10,11 +10,6 @@ public:
     virtual ~BitParser()
     {}
 
-public:
-    void data_callback(std::function<void(char*,int)> &func)
-    {
-        func_data_ = func;
-    }
 
 protected:
     template<typename T>
@@ -29,15 +24,14 @@ protected:
         return input_->read_field<T>(bit_len);
     }
 
-    int read_chunk(int len)
+    int read_chunk(int len,std::function<void(char*,int)> func)
     {
         char* data = NULL;
         int total_len = 0;
         while (total_len < len)
         {
-            
             int read_len = input_->read_chunk(&data, len - total_len);
-            func_data_(data,read_len);
+            func(data,read_len);
             total_len += read_len;
         }
         return total_len;
@@ -54,6 +48,5 @@ protected:
     }
 
     BitStream* input_;
-    std::function<void(char*,int)> func_data_;
 };
 

@@ -30,6 +30,17 @@ public:
         func_timestamp_ = func;
     }
 
+    void video_data_callback(std::function<void(char*,int)> &func)
+    {
+        func_video_data_ = func;
+    }
+
+    void audio_data_callback(std::function<void(char*,int)> &func)
+    {
+        func_audio_data_ = func;
+    }
+
+
 private:
     void pack()
     {
@@ -160,8 +171,14 @@ private:
             {
                 discard_chunk(pes_header_len);
             }
-            read_chunk(pes_packet_length - 3 - pes_header_len);
-
+            if (stream_id >= 0xE0 && stream_id <= 0xEF)
+            {
+                read_chunk(pes_packet_length - 3 - pes_header_len,func_video_data_);
+            }
+            else             
+            {
+                discard_chunk(pes_packet_length - 3 - pes_header_len);
+            }
         }
         else
         {
@@ -211,7 +228,7 @@ private:
         else
         {
             //unknown stream sescriptor
-            read_chunk(descriptor_length);
+            discard_chunk(descriptor_length);
         }
     }
 
@@ -280,5 +297,7 @@ private:
     }
 
     std::function<void(uint32_t)> func_timestamp_;
+    std::function<void(char*, int)> func_video_data_;
+    std::function<void(char*, int)> func_audio_data_;
 };
 #endif /* PS_PARSER_H */
