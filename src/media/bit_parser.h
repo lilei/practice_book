@@ -32,13 +32,15 @@ protected:
     int read_chunk(int len)
     {
         char* data = NULL;
-        int read_len = 0;
-        while (read_len < len)
+        int total_len = 0;
+        while (total_len < len)
         {
-            read_len += input_->read_chunk(&data, len - read_len);
+            
+            int read_len = input_->read_chunk(&data, len - total_len);
             func_data_(data,read_len);
+            total_len += read_len;
         }
-        return read_len;
+        return total_len;
     }
 
     void discard_chunk(int len)
