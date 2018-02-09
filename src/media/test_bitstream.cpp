@@ -85,21 +85,21 @@ private:
 TEST(BitStream,ps)
 {
     //PsStream input("../resource/sintel.ps");
-    PsStream input("../resource/264.mp4");
-    //PsStream input("../resource/265.mp4");
+    //PsStream input("../resource/264.mp4");
+    PsStream input("../resource/265.mp4");
+    PSParser ps;
 
-    std::function<void(uint32_t)> timestamp_func = [](uint32_t timestamp) 
+    ps.on_timestamp = [](uint32_t timestamp) 
     {
         std::cout << timestamp << std::endl;
     };
 
-    std::function<void(char*,int)> data_func = [](char* data,int len)
+    std::ofstream file("../resource/output.h265",std::ios::binary);
+    ps.on_video_es = [&](char* data,int len)
     {
+        file.write(data,len);
     };
 
-    PSParser ps;
-    ps.timestamp_callback(timestamp_func);
-    ps.data_callback(data_func);
     try
     {
         ps.parse(input);

@@ -1,3 +1,6 @@
+#ifndef BIT_PARSER_H
+#define BIT_PARSER_H
+
 #include "bitstream.h"
 #include <functional>
 
@@ -50,3 +53,5 @@ protected:
     BitStream* input_;
 };
 
+
+#endif /* BIT_PARSER_H */
