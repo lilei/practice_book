@@ -11,35 +11,30 @@
 class PSParser :public BitParser
 {
 public:
+    /*the entrance*/
     void parse(BitStream& input);
 
+    /*callback functions*/
     std::function<void(uint32_t)> on_timestamp;
-
     std::function<void(char*, int)> on_video_es;
-
     std::function<void(char*, int)> on_audio_es;
 
 private:
+    /*parsing tree*/
     void pack();
+        void pack_header();
+            void system_header();
+            void pes_packet();
+                void pes_es(uint8_t stream_id,uint16_t pes_packet_length);
+                void program_stream_map(uint8_t stream_id,uint16_t pes_packet_length);
+                    int descriptor();
+                        void video_descriptor();
+                        void audio_descriptor();
 
-    void pack_header();
 
-    void system_header();
-
-    void pes_packet();
-
-    void system_map();
-
-    void descriptor();
-
-    void video_stream_descriptor();
-
-    void audio_stream_descriptor();
-
+    /*lookahead functions*/
     bool pack_start_code();
-
     bool packet_start_code_prefix();
-
     bool system_header_start_code();
 };
 #endif /* PS_PARSER_H */

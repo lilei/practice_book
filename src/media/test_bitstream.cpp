@@ -85,13 +85,13 @@ private:
 TEST(BitStream,ps)
 {
     //PsStream input("../resource/sintel.ps");
-    //PsStream input("../resource/264.mp4");
-    PsStream input("../resource/265.mp4");
+    PsStream input("../resource/264.mp4");
+    //PsStream input("../resource/265.mp4");
     PSParser ps;
 
     ps.on_timestamp = [](uint32_t timestamp) 
     {
-        std::cout << timestamp << std::endl;
+        //std::cout << timestamp << std::endl;
     };
 
     std::ofstream file("../resource/output.h265",std::ios::binary);
