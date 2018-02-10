@@ -188,11 +188,10 @@ void PSParser::program_stream_map(uint8_t stream_id,uint16_t pes_packet_length)
     {
         uint8_t stream_type = read_field<uint8_t>(8);   //stream_type
         uint8_t elementary_stream_pid = read_field<uint8_t>(8);   //elementary_stream_pid
+        on_stream_type(elementary_stream_pid,stream_type);
 
-        std::cout << "stream_id: " << std::hex << (int)elementary_stream_pid << " stream_type: " << (int)stream_type << std::endl;
 
         uint16_t es_info_length = read_field<uint16_t>(16); //elementary_stram_info_length
-        //discard_chunk(es_info_length);
         len += es_info_length + 4;
 
         int len1 = 0;

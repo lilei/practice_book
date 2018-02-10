@@ -16,6 +16,7 @@ public:
 
     /*callback functions*/
     std::function<void(uint32_t)> on_timestamp;
+    std::function<void(uint8_t,uint8_t)> on_stream_type;
     std::function<void(char*, int)> on_video_es;
     std::function<void(char*, int)> on_audio_es;
 
