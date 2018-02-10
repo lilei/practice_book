@@ -159,7 +159,9 @@ void PSParser::pes_es(uint8_t stream_id,uint16_t pes_packet_length)
     }
     if (stream_id >= 0xE0 && stream_id <= 0xEF)
     {
+        on_es_begin();
         read_chunk(pes_packet_length - 3 - pes_header_len, on_video_es);
+        on_es_end();
     }
     else
     {

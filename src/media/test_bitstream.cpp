@@ -4,6 +4,7 @@
 #include "media/rtp.h"
 #include "media/ps_parser.h"
 #include "network/network.h"
+#include "rtp_code.h"
 #include <fstream>
 #include <gtest/gtest.h>
 
@@ -85,20 +86,54 @@ private:
 TEST(BitStream,ps)
 {
     //PsStream input("../resource/sintel.ps");
-    //PsStream input("../resource/264.mp4");
+    PsStream input("../resource/new_h264.mp4");
+    //PsStream input("../resource/264_test.mp4");
     //PsStream input("../resource/data_ps_1.mp4");
-    PsStream input("../resource/265.mp4");
+    //PsStream input("../resource/265.mp4");
     PSParser ps;
-
-    ps.on_timestamp = [](uint32_t timestamp) 
+    RtpEncoder rtp;
+    std::ofstream rtp_file("output_rtp.mp4",std::ios::binary);
+    rtp.on_packet_ready = [&](char* data,int len)
     {
-        //std::cout << timestamp << std::endl;
+        rtp_file.write(data,len);
+        //std::cout << "rtp len: " << len << std::endl;
     };
 
-    std::ofstream file("../resource/output.h265",std::ios::binary);
+    uint16_t seq = 0;
+    uint32_t timestamp = 0;
+    bool end_of_es = false;
+
+    ps.on_timestamp = [&](uint32_t timestamp) 
+    {
+        rtp.timestamp(timestamp);
+    };
+
+    ps.on_es_begin = [&]()
+    {
+        end_of_es = false;
+    };
+
+    ps.on_es_end = [&]()
+    {
+        end_of_es = true;
+    };
+
+
+    //std::ofstream file("../resource/output.h265",std::ios::binary);
     ps.on_video_es = [&](char* data,int len)
     {
-        file.write(data,len);
+        //start of a nal unit
+        if (data[0] == 0 && data[1] == 0 && data[2] == 0 &&data[3] == 1)
+        {
+            data += 4;
+            len -= 4;
+            rtp.nalu_begin(true);
+        }
+        else
+        {
+            rtp.nalu_begin(false);
+        }
+        rtp.push_data(data,len);
     };
 
     ps.on_stream_type = [](uint8_t stream_id,uint8_t stream_type)
@@ -118,7 +153,8 @@ TEST(BitStream,ps)
                 std::cout << stream_type << std::endl;
                 break;
             }
-        } else if (stream_id >= 0xC0 && stream_id <= 0xCF)
+        } 
+        else if (stream_id >= 0xC0 && stream_id <= 0xCF)
         {
             std::cout << "audio codec: " << (int)stream_type << std::endl;
         }
