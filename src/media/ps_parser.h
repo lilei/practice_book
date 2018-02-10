@@ -19,8 +19,7 @@ public:
     std::function<void(uint8_t,uint8_t)> on_stream_type;
     std::function<void(char*, int)> on_video_es;
     std::function<void(char*, int)> on_audio_es;
-    std::function<void()> on_es_begin;
-    std::function<void()> on_es_end;
+    std::function<void()> on_pack_end;
 
 
 private:

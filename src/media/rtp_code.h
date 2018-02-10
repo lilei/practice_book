@@ -73,9 +73,14 @@ public:
 
     std::function<void(char*, int)> on_packet_ready;
 
+
     void nalu_begin(bool nalu_begin)
     {
         nalu_begin_ = nalu_begin;
+    }
+
+    void nalu_end()
+    {
     }
 
     void timestamp(uint32_t timestamp)

@@ -101,23 +101,16 @@ TEST(BitStream,ps)
 
     uint16_t seq = 0;
     uint32_t timestamp = 0;
-    bool end_of_es = false;
 
     ps.on_timestamp = [&](uint32_t timestamp) 
     {
         rtp.timestamp(timestamp);
     };
 
-    ps.on_es_begin = [&]()
+    ps.on_pack_end= [&]()
     {
-        end_of_es = false;
+        rtp.nalu_end();
     };
-
-    ps.on_es_end = [&]()
-    {
-        end_of_es = true;
-    };
-
 
     //std::ofstream file("../resource/output.h265",std::ios::binary);
     ps.on_video_es = [&](char* data,int len)
