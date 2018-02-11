@@ -18,6 +18,13 @@ TEST(rtp,rtp)
     while (true)
     {
         int recv_len = client.recv(buff, len);
+        
+        for (int i = 0;i < 8;i ++)
+        {
+            std::cout << std::hex << (int)(uint8_t)*(buff + 12 + i) << " ";
+        }
+        std::cout << std::endl;
+        /*
         RtpPacket packet(buff,recv_len);
         RtpHeader* header = packet.header();
         char* payload = NULL;
@@ -25,11 +32,13 @@ TEST(rtp,rtp)
         packet.payload(&payload,payload_len);
         //rtp::h264::RtpPayload(payload,payload_len);
         rtp::h265::RtpPayload(payload, payload_len);
+        */
     }
 }
 
 TEST(rtp,aac)
 {
+    /*
     std::ofstream fs("out.aac",std::ios_base::binary);
 
     UdpClient client(NULL,8888);
@@ -90,5 +99,6 @@ TEST(rtp,aac)
             default: std::cout << "other" << std::endl; break;
         }
     }
+    */
 }
 

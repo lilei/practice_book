@@ -132,7 +132,10 @@ void PSParser::pes_es(uint8_t stream_id,uint16_t pes_packet_length)
         read_field<uint8_t>(1);                            //marker_bit
 
         uint32_t timestamp = (pts1 << 30) | (pts2 << 15) | pts3;
-        on_timestamp(timestamp);
+        if (stream_id >= 0xE0 && stream_id <= 0xEF)
+        {
+            on_timestamp(timestamp);
+        }
         discard_chunk(pes_header_len - 5);
     }
     else if (3 == pts_dts_flags)

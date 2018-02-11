@@ -5,6 +5,7 @@
 #include "media/ps_parser.h"
 #include "network/network.h"
 #include "rtp_code.h"
+#include "rtp_h265_code.h"
 #include <fstream>
 #include <gtest/gtest.h>
 
@@ -86,17 +87,23 @@ private:
 TEST(BitStream,ps)
 {
     //PsStream input("../resource/sintel.ps");
-    PsStream input("../resource/new_h264.mp4");
+    //PsStream input("../resource/new_h264.mp4");
     //PsStream input("../resource/264_test.mp4");
     //PsStream input("../resource/data_ps_1.mp4");
-    //PsStream input("../resource/265.mp4");
+    PsStream input("../resource/265.mp4");
     PSParser ps;
-    RtpEncoder rtp;
-    std::ofstream rtp_file("output_rtp.mp4",std::ios::binary);
+    //RtpEncoder rtp;
+    RtpH265Encoder rtp;
+    //std::ofstream rtp_file("output264_rtp.mp4",std::ios::binary);
+    std::ofstream rtp_file("output265_rtp.mp4",std::ios::binary);
+    if (!rtp_file)
+    {
+        std::cout << "can not open file output_rtp.mp4" << std::endl;
+    }
     rtp.on_packet_ready = [&](char* data,int len)
     {
+        rtp_file.write((char*)&len,sizeof(len));
         rtp_file.write(data,len);
-        //std::cout << "rtp len: " << len << std::endl;
     };
 
     uint16_t seq = 0;
@@ -118,13 +125,9 @@ TEST(BitStream,ps)
         //start of a nal unit
         if (data[0] == 0 && data[1] == 0 && data[2] == 0 &&data[3] == 1)
         {
+            rtp.nalu_begin();
             data += 4;
             len -= 4;
-            rtp.nalu_begin(true);
-        }
-        else
-        {
-            rtp.nalu_begin(false);
         }
         rtp.push_data(data,len);
     };

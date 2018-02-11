@@ -1,10 +1,9 @@
-#ifndef RTP_CODE_H
-#define RTP_CODE_H
+#ifndef RTP_H265_CODE_H
+#define RTP_H265_CODE_H
 
 #include <functional>
 #include <fstream>
 
-#endif /* RTP_CODE_H */
 /*
   0                   1                   2                   3
   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -20,7 +19,7 @@
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 
-class RtpEncoder
+class RtpH265Encoder
 {
 public:
     struct RtpHeader
@@ -38,25 +37,37 @@ public:
         uint32_t ssrc;
     };
 
+
+    /*
+    struct NaluHeader 
+    {
+        uint16_t nuh_tid             : 3;
+        uint16_t nuh_layer_id        : 6;
+        uint16_t nal_unit_type       : 6;
+        uint16_t forbidden_zero_bit  : 1;
+    };
+    */
+
     struct NaluHeader
     {
-        uint8_t nalu_type : 5;
-        uint8_t nalu_nri : 2;
-        uint8_t nalu_forbiddern : 1;
+        uint16_t forbidden_zero_bit : 1;
+        uint16_t nal_unit_type : 6;
+        uint16_t nuh_layer_id : 6;
+        uint16_t nuh_tid : 3;
     };
+
+
 
     struct fuHeader
     {
-        uint8_t nalu_type : 5;
-        uint8_t fu_r      : 1;
+        uint8_t nalu_type : 6; 
         uint8_t fu_e      : 1;
         uint8_t fu_s      : 1;
     };
 
-
     static const int PACKET_LEN = 1400;
 
-    RtpEncoder()
+    RtpH265Encoder()
     {
         auto header = rtp_header();
         header->version = 2;
@@ -74,10 +85,11 @@ public:
         buff_ = new char[1024 * 1024];
         write_ = buff_;
         seq_ = 0;
-        test_file_.open("test.h264",std::ios::binary);
+
+        test_file_.open("test.h265",std::ios::binary);
     }
 
-    ~RtpEncoder()
+    ~RtpH265Encoder()
     {
         delete[]buff_;
     }
@@ -103,6 +115,7 @@ public:
         int nalu_len = write_ - buff_;
         test_file_.write(buff_, nalu_len);
     }
+
     void nalu_end()
     {
         write_test();
@@ -131,7 +144,6 @@ public:
 private:
     void single_nal()
     {
-        rtp_header()->marker = 0;
         int nalu_len = write_ - buff_;
         memcpy(rtp_packet_ + sizeof(RtpHeader), buff_,nalu_len);
         packet_ready(sizeof(RtpHeader) + nalu_len);
@@ -139,44 +151,43 @@ private:
 
     void fragment_nal()
     {
-        *nalu_header() = *(NaluHeader*)buff_;
-        fu_header()->nalu_type = nalu_header()->nalu_type;
-        nalu_header()->nalu_type = 28;
+        memcpy(rtp_packet_ + sizeof(RtpHeader),buff_,2);
+        NaluHeader* hdr = nalu_header();
+        NaluHeader* hdr1 = (NaluHeader*)buff_;
+        fu_header()->nalu_type = nalu_header()->nal_unit_type;
+        nalu_header()->nal_unit_type = 49;
+        fuHeader* fu = fu_header();
 
-        char* p = buff_ + 1;
+        char* p = buff_ + 2;
         int nalu_len = write_ - p;
-        int fragment_len = PACKET_LEN - sizeof(RtpHeader) - 2;
+        int fragment_len = PACKET_LEN - sizeof(RtpHeader) - 3;
 
         //the first fragment
         rtp_header()->marker = 0;
-        fu_header()->fu_r = 0;
         fu_header()->fu_s = 1;
         fu_header()->fu_e = 0;
-        memcpy(rtp_packet_ + sizeof(RtpHeader) + 2, p, fragment_len);
-        packet_ready(sizeof(RtpHeader) + 2 + fragment_len);
+        memcpy(rtp_packet_ + sizeof(RtpHeader) + 3, p, fragment_len);
+        packet_ready(PACKET_LEN);
         p += fragment_len;
 
         //the middle fragment
         while (p + fragment_len <= write_)
         {
             rtp_header()->marker = 0;
-            fu_header()->fu_r = 0;
             fu_header()->fu_s = 0;
             fu_header()->fu_e = 0;
-            memcpy(rtp_packet_ + sizeof(RtpHeader) + 2, p, fragment_len);
-            packet_ready(sizeof(RtpHeader) + 2 + fragment_len);
+            memcpy(rtp_packet_ + sizeof(RtpHeader) + 3, p, fragment_len);
+            packet_ready(PACKET_LEN);
             p += fragment_len;
         }
 
         //the last fragment
         rtp_header()->marker = 1;
-        fu_header()->fu_r = 0;
         fu_header()->fu_s = 0;
         fu_header()->fu_e = 1;
         int last_len = write_ - p;
-        memcpy(rtp_packet_ + sizeof(RtpHeader) + 2, p, last_len);
-        packet_ready(sizeof(RtpHeader) + 2 + last_len);
-        
+        memcpy(rtp_packet_ + sizeof(RtpHeader) + 3, p, last_len);
+        packet_ready(sizeof(RtpHeader) + 3 + last_len);
     }
 
     void packet_ready(int len)
@@ -197,7 +208,7 @@ private:
 
     inline fuHeader* fu_header()
     {
-        return (fuHeader*)(rtp_packet_ + sizeof(RtpHeader) + 1);
+        return (fuHeader*)(rtp_packet_ + sizeof(RtpHeader) + 2);
     }
 
     char* buff_;
@@ -206,3 +217,5 @@ private:
     uint16_t seq_;
     std::ofstream test_file_;
 };
+
+#endif /* RTP_H265_CODE_H */
