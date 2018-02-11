@@ -63,24 +63,43 @@ public:
         header->timestamp = 0;
         header->ssrc = 0;
 
-        write_ = data_ + sizeof(RtpHeader);
-        nalu_begin_ = true;
-        fu_ = false;
+        buff_ = new char[1024 * 1024];
+        write_ = buff_;
     }
 
     ~RtpEncoder()
-    {}
+    {
+        delete[]buff_;
+    }
 
     std::function<void(char*, int)> on_packet_ready;
 
 
-    void nalu_begin(bool nalu_begin)
+    void nalu_begin()
     {
-        nalu_begin_ = nalu_begin;
+        if (write_ != buff_)
+        {
+            nalu_end();
+        }
     }
-
     void nalu_end()
     {
+        int nalu_len = write_ - buff_;
+        if (nalu_len < PACKET_LEN - sizeof(RtpHeader))
+        {
+            memcpy(rtp_packet_ + sizeof(RtpHeader), buff_, nalu_len);
+            packet_ready(sizeof(RtpHeader) + nalu_len);
+        }
+        else
+        {
+            int unit_len = PACKET_LEN - sizeof(RtpHeader) - 1;
+            int uint_size = nalu_len / unit_len;
+            if (nalu_len % unit_len != 0)
+            {
+                uint_size += 1;
+                unit_len = nalu_len / uint_size;
+            }
+        }
     }
 
     void timestamp(uint32_t timestamp)
@@ -90,89 +109,18 @@ public:
 
     void push_data(char* data,int len)
     {
-        /*the previous rtp packet is ready*/ 
-        if (nalu_begin_ && !empty())
-        {
-            rtp_header()->marker = 1;
-            if (fu_)
-            {
-                fu_header()->fu_e = 1;
-                fu_ = false;
-            }
-            packet_ready();
-            rtp_header()->marker = 0;
-        }
-        if (len <= free_size())
-        {
-            if (fu_)
-            {
-                fu_header()->fu_s = 0;
-                fu_header()->fu_e = 0;
-                fu_header()->nalu_type = 28;
-            }
-            memcpy(write_, data, len);
-            write_ += len;
-            return;
-        }
-        else
-        {
-            if (!fu_)
-            {
-                fu_ = true;
-                fu_header()->fu_s = 1;
-                fu_header()->nalu_type = 28;
-            }
-            if (0 == free_size())
-            {
-                packet_ready();
-            }
-            write_ += 1;
-            int write_len = free_size();
-            memcpy(write_,data,write_len);
-            packet_ready();
-            push_data(data_ + write_len,len - write_len);
-        }
     }
 
 private:
     inline RtpHeader* rtp_header()
     {
-        return (RtpHeader*)data_;
+        return (RtpHeader*)rtp_packet_;
     }
 
-    char* rtp_payload()
-    {
-        return data_ + sizeof(RtpHeader);
-    }
-    
-    int free_size()
-    {
-        return data_ + PACKET_LEN - write_;
-    }
 
-    bool empty()
+    void packet_ready(int len)
     {
-        if (write_ - data_ == sizeof(RtpHeader))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    void packet_ready()
-    {
-        on_packet_ready(data_,write_ - data_);
-        if (fu_)
-        {
-            write_ = rtp_payload() + 1;
-        }
-        else
-        {
-            write_ = rtp_payload();
-        }
+        on_packet_ready(rtp_packet_,len);
         rtp_header()->sequencenumber++;
     }
 
@@ -186,14 +134,11 @@ private:
         packet_ready();
     }
 
-    void fragment(char* data,int len)
+    int copy_data(char* data,int len)
     {
-        packet_ready();
     }
 
-    char data_[PACKET_LEN];
+    char* buff_;
     char* write_; /*current write pos*/
-    bool nalu_begin_;
-    bool fu_;
-
+    char rtp_packet_[PACKET_LEN];
 };
